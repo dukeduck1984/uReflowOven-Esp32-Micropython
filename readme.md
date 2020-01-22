@@ -6,18 +6,18 @@ The original code of EZ Make Oven can be found [here](https://github.com/adafrui
 
 The purpose is to make a reflow soldering oven by modifying a kitchen oven with more affordable and widely available hardwares.
 
-The GUI of this project is built with LittlevGL (lv_binding_micropython) which is a very powerful and easy to use GUI library.
+The GUI of this project is built with LittlevGL ([lv_binding_micropython][lv]) which is a very powerful and easy to use GUI library.
 LittlevGL already comes with drivers for ILI9341 TFT display and XPT2046 touch controller, this project takes the advantage
 of both to ease the user operation. 
 
 ### Bill of Materials
-* 1 x regular kitchen oven with 10-12L capacity.
-* 1 x solid state relay rated 10A.
-* 1 x passive piezo buzzer.
-* 1 x ILI9341 TFT display with on-board XPT2046 touch controller.
-* 1 x MAX31855 thermocouple amplifier with K-thermocouple.
-* 1 x AC-DC5v power supply to power the ESP32 dev board.
-* 1 x ESP32 dev board.
+* 1 x regular kitchen oven with 10-12L capacity. Like [this][oven].
+* 1 x solid state relay rated 10A. Like [this][ssr].
+* 1 x passive piezo buzzer. Like [this][buzzer].
+* 1 x ILI9341 TFT display with on-board XPT2046 touch controller. Like [this][tft].
+* 1 x MAX31855 thermocouple amplifier with K-thermocouple. Like [this][thermocouple].
+* 1 x AC-DC5v power supply to power the ESP32 dev board. Like [this][acdc].
+* 1 x ESP32 dev board.  Like [this][esp32].
 
 ### Oven Modification and Wiring
 * WARNING: The mains (220/110V) can be deadly.  Make sure the oven is unplugged from the wall plug before doing any modification
@@ -46,3 +46,12 @@ drop-down menu, just choose the type you'll use, and the reflow temperature prof
 https://learn.adafruit.com/ez-make-oven?view=all#the-toaster-oven, under chapter "Solder Paste Profiles".
 The new solder profile json file should be put under folder ```profiles```.
 * All set and click "Start" button to start the reflow soldering procress.
+
+[lv]:https://github.com/littlevgl/lv_binding_micropython
+[oven]:https://www.aliexpress.com/item/4000151934943.html
+[ssr]:https://www.aliexpress.com/item/4000083560440.html
+[buzzer]:https://www.aliexpress.com/item/32808743801.html
+[tft]:https://www.aliexpress.com/item/32960934541.html
+[thermocouple]:https://www.aliexpress.com/item/32878757344.html
+[acdc]:https://www.aliexpress.com/item/32821770958.html
+[esp32]:https://www.aliexpress.com/item/32855652152.html
