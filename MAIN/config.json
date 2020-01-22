@@ -1,0 +1,33 @@
+{
+    "touch_cali_file": "touch_cali.json",
+    "default_alloy": "Sn63/Pb37",
+    "has_calibrated": true,
+    "calibrate_temp": 29.5625,
+    "calibrate_seconds": 37,
+    "oven_pin": 21,
+    "tft_pins": {
+        "miso": 5,
+        "mosi": 18,
+        "sck": 19,
+        "cs": 13,
+        "dc": 12,
+        "rst": 4,
+        "acc": 14,
+        "led": 15,
+        "acc_active_low": false,
+        "led_active_low": false,
+        "is_portrait": true
+    },
+    "touch_pins": {
+        "cs": 25,
+        "interrupt": 35
+    },
+    "buzzer_pin": 22,
+    "max31855_pins": {
+        "hwspi": 2,
+        "cs": 27,
+        "miso": 33,
+        "sck": 32
+    },
+    "temp_offset": 0.0
+}
