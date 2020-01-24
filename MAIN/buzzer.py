@@ -1,3 +1,4 @@
+import gc
 import machine
 import utime
 import songs  # song list
@@ -6,9 +7,10 @@ from rtttl import RTTTL  # rtttl parser
 
 
 class Buzzer:
-    def __init__(self, pin, volume=200):
+    def __init__(self, pin, volume=900):
         """
-        Initialize the pwm pin for controlling the buzzer
+        Initialize the pwm pin for controlling the buzzer.
+        It should be a passive active low piezo buzzer.
         :param pin: int; the pwm pin number
         :param volume: int; the duty cycle of the pwm.  higher the duty cycle, higher the volume of the buzzer
         """
@@ -44,6 +46,8 @@ class Buzzer:
         self.tone1 = ['A5', 'B5', 'C5', 'B5', 'C5', 'D5', 'C5', 'D5', 'E5', 'D5', 'E5', 'E5']
         self.tone2 = ['G5', 'C5', 'G5', 'C5']
         self.tone3 = ['E5', 0, 'E5', 0, 'E5']
+        self.mute = False
+        self.is_playing = False
 
     def play_tone(self, freq, msec):
         """
@@ -68,7 +72,17 @@ class Buzzer:
         """
         try:
             for freq, msec in tune.notes():
-                self.play_tone(freq, msec)
+                if not self.mute:
+                    self.is_playing = True
+                    self.play_tone(freq, msec)
+                else:
+                    self.play_tone(0, 0)
+                    self.is_playing = False
+                    self.mute = False
+                    break
+            self.is_playing = False
+            self.mute = False
+            gc.collect()
         except KeyboardInterrupt:
             self.play_tone(0, 0)
 
@@ -78,6 +92,10 @@ class Buzzer:
         :param search: string; song name listed in songs.py
         :return: None
         """
+        while self.is_playing:
+            self.mute = True
+        else:
+            self.mute = False
         # play song in a new thread (non-blocking)
         play_tone = _thread.start_new_thread(self.play, (RTTTL(songs.find(search)),))
         # self.play(RTTTL(songs.find(search)))
