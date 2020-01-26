@@ -336,7 +336,7 @@ class GUI:
         Update the actual real-time temp
         Should be called externally
         """
-        self.temp_text.set_text(str(round(temp, 1)))
+        self.temp_text.set_text('{:.1f}'.format(temp))
 
     def popup_confirm_stop(self):
         modal_style = lv.style_t()
@@ -489,9 +489,9 @@ class GUI:
         stage_cont.set_style(lv.label.STYLE.MAIN, style_stage)
         stage_label = lv.label(stage_cont)
         stage_label.set_recolor(True)
-        stage_label.set_long_mode(lv.label.LONG.SROLL_CIRC)
+        stage_label.set_long_mode(lv.label.LONG.SROLL)
         stage_label.set_width(128)
-        stage_label.set_text('#FF3333 Cool Down. Open Door.#')
+        stage_label.set_text('')
         return stage_cont, stage_label
 
     def set_stage_text(self, text):

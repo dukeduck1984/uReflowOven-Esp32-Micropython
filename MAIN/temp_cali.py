@@ -30,6 +30,7 @@ class TempCali:
         self.last_temp = None
         self.lag_temp = None
         self.lag_time = None
+        self.cooling_counter = 0
         self.check_temp = 100
 
     def _update_text(self, text):
@@ -47,7 +48,7 @@ class TempCali:
             print(current_temp)
             if current_temp >= self.check_temp:
                 self.oven.off()
-                self._update_text('Done.\n\n')
+                self._update_text('Done. Cool down now.\n')
                 self.tim.deinit()
                 self._init_cooling_test()
 
@@ -61,10 +62,12 @@ class TempCali:
     def _cooling_cb_handler(self):
         current_temp = self.sensor.read_temp()
         print(current_temp)
-        if current_temp <= self.last_temp:
-            self._update_text('Done.\n\n')
-            self.tim.deinit()
-            self._save_temp_cali_results()
+        if current_temp < self.last_temp:
+            self.cooling_counter += 1
+            if self.cooling_counter >=3:
+                self._update_text('All done.\n\n')
+                self.tim.deinit()
+                self._save_temp_cali_results()
         else:
             self.last_temp = current_temp
 
@@ -72,7 +75,7 @@ class TempCali:
         self.lag_time = int(utime.time() - self.start_time)
         self.lag_temp = self.last_temp - self.check_temp
 
-        self._update_text("** Calibration Results ** \n")
+        self._update_text("** Calibration Results Saved ** \n")
         self._update_text("calibrate_temp: " + str(round(self.lag_temp, 2)) + '\n')
         self._update_text("calibrate_seconds: " + str(self.lag_time))
         self._update_text('\n\n')
@@ -84,16 +87,15 @@ class TempCali:
         with open('config.json', 'w') as f:
             ujson.dump(self.config, f)
 
-        self._update_text('Calibration results have been saved.\n')
         self._update_text('The oven controller will reboot in 3 seconds...')
         self.tim.deinit()
         self.tim.init(period=3000, mode=machine.Timer.PERIODIC, callback=lambda t: machine.reset())
 
     def start(self):
         lv.scr_load(self.temp_cali_scr)
-        self._update_text("Calibration will start in 3 seconds...\n")
-        utime.sleep(3)
-        self._update_text("Starting...\n\n")
+        self._update_text("Calibration will start in 5sec...\n\n")
+        utime.sleep(5)
+        self._update_text("Starting...\n")
         self._update_text("Calibrating oven temperature to " + str(self.check_temp) + ' C`... \n')
         self.oven.on()
         self.tim.deinit()
