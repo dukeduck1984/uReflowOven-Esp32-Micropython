@@ -139,7 +139,7 @@ class OvenControl:
         low_end = self.profiles.get_temp_range()[0]
         oven_temp = self.sensor.get_temp()
         if oven_temp >= low_end:
-            self.temp_points.append(oven_temp)
+            self.temp_points.append(int(oven_temp))
             self.gui.chart_update(self.temp_points)
 
     def _elapsed_timer_update(self):
