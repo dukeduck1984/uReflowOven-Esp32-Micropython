@@ -109,7 +109,9 @@ class OvenControl:
             self.set_oven_state("cool")
         if self.oven_state == "cool":
             self.oven_enable(False)
-        if self.oven_state == 'cool' and self.timediff >= self.profiles.get_time_range()[-1]:
+        # if self.oven_state == 'cool' and self.timediff >= self.profiles.get_time_range()[-1]:
+        if self.oven_state == 'cool' and len(self.temp_points) >= len(self.gui.null_chart_point_list):
+            self.beep.activate('Stop')
             self.has_started = False
 
         if self.oven_state in ("start", "preheat", "soak", "reflow"):
@@ -159,38 +161,42 @@ class OvenControl:
         self._start_timimg()
         if self.oven_state != self.last_state:
             if self.oven_state == 'start':
-                self.beep.play_song('Start')
+                # self.beep.play_song('Start')
+                self.beep.activate('Start')
             elif self.oven_state == 'cool':
-                self.beep.play_song('SMBwater')
+                self.beep.activate('SMBwater')
             elif self.oven_state == 'ready':
                 pass
             elif self.oven_state == 'wait':
-                self.beep.play_song('Next')
+                # self.beep.play_song('Next')
+                self.beep.activate('TAG')
             else:
-                self.beep.play_song('Transformers')
+                self.beep.activate('Next')
+            # Update stage message to user
+            self._stage_message_update()
             self.last_state = self.oven_state
 
     def _stage_message_update(self):
         if self.oven_state == "ready":
-            self.stage_text = "Ready"
+            self.stage_text = "#003399 Ready#"
         if self.oven_state == "start":
-            self.stage_text = "Starting"
+            self.stage_text = "#009900 Starting#"
         if self.oven_state == "preheat":
-            self.stage_text = "Preheat"
+            self.stage_text = "#FF6600 Preheat#"
         if self.oven_state == "soak":
-            self.stage_text = "Soak"
+            self.stage_text = "#FF0066 Soak#"
         if self.oven_state == "reflow":
-            self.stage_text = "Reflow"
+            self.stage_text = "#FF0000 Reflow#"
         if self.oven_state == "cool" or self.oven_state == "wait":
-            self.stage_text = "Cool Down, Open Door"
+            self.stage_text = "#0000FF Cool Down, Open Door#"
         self.gui.set_stage_text(self.stage_text)
 
     def _control_cb_handler(self):
         if self.has_started:
             # Oven temperature control logic
             self._reflow_temp_control()
-            # Update stage message to user
-            self._stage_message_update()
+            # # Update stage message to user
+            # self._stage_message_update()
             if self.oven_state in ("start", "preheat", "soak", "reflow", 'cool'):
                 # Update gui temp chart
                 self._chart_update()

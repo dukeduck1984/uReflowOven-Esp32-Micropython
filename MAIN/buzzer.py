@@ -1,4 +1,3 @@
-import gc
 import machine
 import utime
 import songs  # song list
@@ -48,6 +47,7 @@ class Buzzer:
         self.tone3 = ['E5', 0, 'E5', 0, 'E5']
         self.mute = False
         self.is_playing = False
+        self.song = None
 
     def play_tone(self, freq, msec):
         """
@@ -82,7 +82,6 @@ class Buzzer:
                     break
             self.is_playing = False
             self.mute = False
-            gc.collect()
         except KeyboardInterrupt:
             self.play_tone(0, 0)
 
@@ -97,5 +96,10 @@ class Buzzer:
         else:
             self.mute = False
         # play song in a new thread (non-blocking)
-        play_tone = _thread.start_new_thread(self.play, (RTTTL(songs.find(search)),))
-        # self.play(RTTTL(songs.find(search)))
+        # _thread.stack_size(16 * 1024)  # set stack size to avoid runtime error
+        # play_tone = _thread.start_new_thread(self.play, (RTTTL(songs.find(search)),))
+        self.play(RTTTL(songs.find(search)))
+        self.song = None
+
+    def activate(self, song):
+        self.song = song

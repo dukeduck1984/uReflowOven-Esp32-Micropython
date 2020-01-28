@@ -486,8 +486,10 @@ class GUI:
         stage_cont.set_layout(lv.LAYOUT.CENTER)
         style_stage = lv.style_t()
         lv.style_copy(style_stage, lv.style_plain)
+        style_stage.text.font = lv.font_roboto_22
         stage_cont.set_style(lv.label.STYLE.MAIN, style_stage)
         stage_label = lv.label(stage_cont)
+        stage_label.set_style(lv.label.STYLE.MAIN, style_stage)
         stage_label.set_recolor(True)
         stage_label.set_long_mode(lv.label.LONG.SROLL)
         stage_label.set_width(128)

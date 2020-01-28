@@ -8,6 +8,9 @@ import lvesp32
 from ili9341 import ili9341
 from xpt2046 import xpt2046
 
+
+machine.freq(240000000)
+
 with open('config.json', 'r') as f:
     config = ujson.load(f)
 
@@ -126,10 +129,20 @@ else:
             except Exception:
                 print('Error occurs when measuring temperature.')
             gui.temp_update(temp_sensor.get_temp())
-            gc.collect()
             utime.sleep_ms(500)
 
 
+    def buzzer_activate():
+        while True:
+            if buzzer.song:
+                buzzer.play_song(buzzer.song)
+                gc.collect()
+            else:
+                pass
+
+
+    _thread.stack_size(7 * 1024)
     temp_th = _thread.start_new_thread(measure_temp, ())
+    buzzer_th = _thread.start_new_thread(buzzer_activate, ())
 
     oven_control = OvenControl(oven, temp_sensor, reflow_profiles, gui, buzzer, timer, config)
