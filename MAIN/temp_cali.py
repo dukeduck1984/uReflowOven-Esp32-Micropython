@@ -89,7 +89,7 @@ class TempCali:
 
         self._update_text('The oven controller will reboot in 3 seconds...')
         self.tim.deinit()
-        self.tim.init(period=3000, mode=machine.Timer.PERIODIC, callback=lambda t: machine.reset())
+        self.tim.init(period=3000, mode=machine.Timer.ONE_SHOT, callback=lambda t: machine.reset())
 
     def start(self):
         lv.scr_load(self.temp_cali_scr)

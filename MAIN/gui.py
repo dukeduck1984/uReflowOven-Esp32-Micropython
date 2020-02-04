@@ -398,18 +398,17 @@ class GUI:
         def event_handler(obj, event):
             if event == lv.EVENT.VALUE_CHANGED:
                 active_btn_text = popup_cali.get_active_btn_text()
+                tim = machine.Timer(-1)
                 if active_btn_text == 'Temp Sensor':
                     this.config['has_calibrated'] = False
                     with open('config.json', 'w') as f:
                         ujson.dump(this.config, f)
-                    utime.sleep_ms(200)
-                    machine.reset()
+                    tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t:machine.reset())
                 elif active_btn_text == 'Touch Screen':
                     uos.remove(this.config.get('touch_cali_file'))
-                    utime.sleep_ms(200)
-                    machine.reset()
+                    tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t:machine.reset())
                 else:
-                    pass
+                    tim.deinit()
 
                 bg.del_async()
                 popup_cali.start_auto_close(5)
