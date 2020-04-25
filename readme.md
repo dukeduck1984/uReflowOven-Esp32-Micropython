@@ -1,14 +1,22 @@
 ## μReflow Oven with MicroPython & LittlevGL
 
+[中文版请见于此](./readme_zh.md)。
+
 This project is modifided and rewritten on top of [Adafruit EZ Make Oven](https://learn.adafruit.com/ez-make-oven?view=all).
 The original code of EZ Make Oven can be found [here](https://github.com/adafruit/Adafruit_Learning_System_Guides/tree/master/PyPortal_EZ_Make_Oven).
+
+![](./pic/overview.jpg)
 
 
 The purpose is to make a reflow soldering oven by modifying a kitchen oven with more affordable and widely available hardwares.
 
+![](./pic/internal.jpg)
+
 The GUI of this project is built with LittlevGL ([lv_binding_micropython][lv]) which is a very powerful and easy to use GUI library.
 LittlevGL already comes with drivers for ILI9341 TFT display and XPT2046 touch controller, this project takes the advantage
 of both to ease the user operation. 
+
+![](./pic/screen.jpg)
 
 ### Bill of Materials
 * 1 x regular kitchen oven with 10-12L capacity. Like [this][oven].
@@ -46,6 +54,8 @@ drop-down menu, just choose the type you'll use, and the reflow temperature prof
 https://learn.adafruit.com/ez-make-oven?view=all#the-toaster-oven, under chapter "Solder Paste Profiles".
 The new solder profile json file should be put under folder ```profiles```.
 * All set and click "Start" button to start the reflow soldering procress.
+* If you wish to re-calibrate either the temperature curve or touch screen, click the 'Calibration' button
+on the screen, and choose from the popup window.  And follow the on-screen instruction.
 
 [lv]:https://github.com/littlevgl/lv_binding_micropython
 [oven]:https://www.aliexpress.com/item/4000151934943.html
