@@ -7,6 +7,8 @@ import lvgl as lv
 import lvesp32
 
 
+# TODO #1 adding settings for PID parameters and temp offset
+# TODO #2 get rid of temp calibration button
 class GUI:
     CHART_WIDTH = 240
     CHART_HEIGHT = 120

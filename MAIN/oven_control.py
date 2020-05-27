@@ -5,19 +5,20 @@ import utime
 class OvenControl:
     states = ("wait", "ready", "start", "preheat", "soak", "reflow", "cool")
 
-    def __init__(self, oven_obj, temp_sensor_obj, reflow_profiles_obj, gui_obj, buzzer_obj, timer_obj, config):
+    def __init__(self, oven_obj, temp_sensor_obj, pid_obj, reflow_profiles_obj, gui_obj, buzzer_obj, timer_obj, config):
         self.config = config
         self.oven = oven_obj
         self.gui = gui_obj
         self.beep = buzzer_obj
         self.tim = timer_obj
+        self.pid = pid_obj
         self.profiles = reflow_profiles_obj
         self.sensor = temp_sensor_obj
         self.ontemp = self.sensor.get_temp()
         self.offtemp = self.ontemp
         self.ontime = 0
         self.offtime = 0
-        self.control = False
+        # self.control = False
         self.reflow_start = 0
         self.oven_state = 'ready'
         self.last_state = 'ready'
@@ -26,6 +27,7 @@ class OvenControl:
         self.temp_points = []
         self.has_started = False
         self.start_time = None
+        self.timer_last_called = None
         self.oven_reset()
         self.format_time(0)
         self.gui.add_reflow_process_start_cb(self.reflow_process_start)
@@ -55,7 +57,7 @@ class OvenControl:
         self.oven_enable(False)
 
     def oven_enable(self, enable):
-        self.control = enable
+        # self.control = enable
         if enable:
             self.oven.on()
             self.gui.led_turn_on()
@@ -78,6 +80,7 @@ class OvenControl:
         self.gui.set_timer_text(time)
 
     def _reflow_temp_control(self):
+        """This function is called every 100ms"""
         stages = self.profiles.get_profile_stages()
         temp = self.sensor.get_temp()
         if self.oven_state == "ready":
@@ -117,25 +120,38 @@ class OvenControl:
         if self.oven_state in ("start", "preheat", "soak", "reflow"):
             # oven temp control here
             # check range of calibration to catch any humps in the graph
-            checktime = 0
-            checktimemax = self.config.get("calibrate_seconds")
-            checkoven = False
-            if not self.control:
-                checktimemax = max(0, self.config.get("calibrate_seconds") -
-                                   (utime.time() - self.offtime))
-            while checktime <= checktimemax:
-                check_temp = self.get_profile_temp(int(self.timediff + checktime))
-                if (temp + self.config.get("calibrate_temp")*checktime/checktimemax
-                        < check_temp):
-                    checkoven = True
-                    break
-                checktime += 5
-            if not checkoven:
-                # hold oven temperature
-                if (self.oven_state in ("start", "preheat", "soak") and
-                        self.offtemp > self.sensor.get_temp()):
-                    checkoven = True
-            self.oven_enable(checkoven)
+
+            current_temp = self.sensor.get_temp()
+            set_temp = self.get_profile_temp(int(self.timediff))
+
+            pid_output = self.pid.update(current_temp, set_temp)
+            target_temp = set_temp + pid_output
+
+            if current_temp < target_temp:
+                self.oven_enable(True)
+            else:
+                self.oven_enable(False)
+
+            ################ OLD CODE #################
+            # checktime = 0
+            # checktimemax = self.config.get("calibrate_seconds")
+            # checkoven = False
+            # if not self.control:
+            #     checktimemax = max(0, self.config.get("calibrate_seconds") -
+            #                        (utime.time() - self.offtime))
+            # while checktime <= checktimemax:
+            #     check_temp = self.get_profile_temp(int(self.timediff + checktime))
+            #     if (temp + self.config.get("calibrate_temp")*checktime/checktimemax
+            #             < check_temp):
+            #         checkoven = True
+            #         break
+            #     checktime += 5
+            # if not checkoven:
+            #     # hold oven temperature
+            #     if (self.oven_state in ("start", "preheat", "soak") and
+            #             self.offtemp > self.sensor.get_temp()):
+            #         checkoven = True
+            # self.oven_enable(checkoven)
 
     def _chart_update(self):
         low_end = self.profiles.get_temp_range()[0]
@@ -194,14 +210,18 @@ class OvenControl:
     def _control_cb_handler(self):
         if self.has_started:
             # Oven temperature control logic
+            # With PID, temp control logic should be called once per 100ms
             self._reflow_temp_control()
-            # # Update stage message to user
-            # self._stage_message_update()
-            if self.oven_state in ("start", "preheat", "soak", "reflow", 'cool'):
-                # Update gui temp chart
-                self._chart_update()
-                # Update elapsed timer
-                self._elapsed_timer_update()
+            # Below methods are called once per second
+            if not self.timer_last_called:
+                self.timer_last_called = utime.ticks_ms()
+            if utime.ticks_diff(utime.ticks_ms(), self.timer_last_called) >= 1000:
+                if self.oven_state in ("start", "preheat", "soak", "reflow", 'cool'):
+                    # Update gui temp chart
+                    self._chart_update()
+                    # Update elapsed timer
+                    self._elapsed_timer_update()
+                self.timer_last_called = utime.ticks_ms()
         else:
             self.tim.deinit()
             # Same effect as click Stop button on GUI
@@ -222,8 +242,9 @@ class OvenControl:
             self.set_oven_state('wait')
         else:
             self.set_oven_state('start')
-        # initialize the hardware timer to call the control callback once every 1s
-        self.tim.init(period=1000, mode=machine.Timer.PERIODIC, callback=lambda t: self._control_cb_handler())
+        # initialize the hardware timer to call the control callback once every 100ms
+        # With PID, the period of the timer should be 100ms now
+        self.tim.init(period=100, mode=machine.Timer.PERIODIC, callback=lambda t: self._control_cb_handler())
 
     def reflow_process_stop(self):
         """

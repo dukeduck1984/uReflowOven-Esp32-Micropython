@@ -1,9 +1,6 @@
 {
     "touch_cali_file": "touch_cali.json",
     "default_alloy": "Sn63/Pb37",
-    "has_calibrated": true,
-    "calibrate_temp": 29.5625,
-    "calibrate_seconds": 37,
     "oven_pin": 21,
     "tft_pins": {
         "miso": 5,
@@ -29,5 +26,10 @@
         "miso": 33,
         "sck": 32
     },
-    "temp_offset": 0.0
+    "temp_offset": 0.0,
+    "pid": {
+        "kp": 2.0,
+        "ki": 0.001,
+        "kd": 20.0
+    }
 }
