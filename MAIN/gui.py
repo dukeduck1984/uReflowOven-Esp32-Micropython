@@ -146,7 +146,7 @@ class GUI:
         dash_width = int(GUI.CHART_WIDTH / (dashed_segments * 2 - 1))
         dashed_points = [
             {'x': 0, 'y': 0},
-            {'x': dash_width,'y':0}
+            {'x': dash_width, 'y': 0}
         ]
         dashed_line0 = lv.line(dashed_cont)
         dashed_line0.set_points(dashed_points, len(dashed_points))
@@ -285,7 +285,6 @@ class GUI:
             self.profile_alloy_selector.set_style(lv.ddlist.STYLE.BG, lv.style_pretty_color)
             self.profile_alloy_selector.set_style(lv.ddlist.STYLE.SEL, lv.style_pretty_color)
             self.profile_alloy_selector.set_click(True)
-
 
     def save_default_alloy(self):
         alloy_name = self.alloy_list[self.profile_alloy_selector.get_selected()]
@@ -426,8 +425,8 @@ class GUI:
         self.popup_cali = popup_cali
         return self.popup_cali
 
-    # TODO Need to test the layout of the new popup window
     def popup_pid_params(self):
+        current_input_placeholder = 'Set Kp'
         modal_style = lv.style_t()
         lv.style_copy(modal_style, lv.style_plain_color)
         modal_style.body.main_color = modal_style.body.grad_color = lv.color_make(0, 0, 0)
@@ -439,52 +438,39 @@ class GUI:
         bg.set_opa_scale_enable(True)
 
         # init mbox and title
-        popup_pid_params = lv.mbox(bg)
-        popup_pid_params.set_text('Set PID Params')
+        popup_pid = lv.mbox(bg)
+        popup_pid.set_text('Set PID Params')
+        popup_pid.set_size(220, 300)
+        popup_pid.align(bg, lv.ALIGN.CENTER, 0, 0)
 
-        # init text areas
-        kp_input = lv.ta(popup_pid_params)
-        kp_input.set_text(self.pid_params.get('kp'))
-        kp_input.set_accepted_chars(kp_input, '0123456789.+-')
-        kp_input.set_one_line(True)
-        kp_input.set_width(80)
-        kp_label = lv.label(popup_pid_params)
-        kp_label.set_text("Kp:")
-        kp_label.align(kp_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
-        pid_title_label = lv.label(popup_pid_params)
-        pid_title_label.set_text("PID:")
-        pid_title_label.align(kp_label, lv.ALIGN.OUT_LEFT_TOP, 0, 0)
+        input_cont = lv.cont(popup_pid)
+        input_cont.set_size(210, 180)
 
-        ki_input = lv.ta(popup_pid_params)
-        ki_input.set_text(self.pid_params.get('ki'))
-        ki_input.set_accepted_chars(ki_input, '0123456789.+-')
-        ki_input.set_one_line(True)
-        ki_input.set_width(80)
-        ki_label = lv.label(popup_pid_params)
-        ki_label.set_text("Ki:")
-        ki_label.align(ki_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+        def input_event_cb(ta, event):
+            global current_input_placeholder, popup_pid
+            if event == lv.EVENT.CLICKED:
+                current_input_placeholder = ta.get_placeholder_text()
+                if current_input_placeholder == 'Set Offset':
+                    popup_pid.align(bg, lv.ALIGN.CENTER, 0, -55)
+                else:
+                    popup_pid.align(bg, lv.ALIGN.CENTER, 0, 0)
+                if kb.get_hidden():
+                    kb.set_hidden(False)
+                # Focus on the clicked text area
+                kb.set_ta(ta)
 
-        kd_input = lv.ta(popup_pid_params)
-        kd_input.set_text(self.pid_params.get('kd'))
-        kd_input.set_accepted_chars(kd_input, '0123456789.+-')
-        kd_input.set_one_line(True)
-        kd_input.set_width(80)
-        kd_label = lv.label(popup_pid_params)
-        kd_label.set_text("Kd:")
-        kd_label.align(kd_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
-
-        temp_offset_input = lv.ta(popup_pid_params)
-        temp_offset_input.set_text(self.temp_offset)
-        temp_offset_input.set_accepted_chars(temp_offset_input, '0123456789.+-')
-        temp_offset_input.set_one_line(True)
-        temp_offset_input.set_width(80)
-        temp_offset_label = lv.label(popup_pid_params)
-        temp_offset_label.set_text("Temp Offset:")
-        temp_offset_label.align(temp_offset_input, lv.ALIGN.OUT_LEFT_TOP, 0, 0)
+        def keyboard_event_cb(event_kb, event):
+            event_kb.def_event_cb(event)
+            if event == lv.EVENT.CANCEL or event == lv.EVENT.APPLY:
+                kb.set_hidden(True)
+                global current_input_placeholder
+                if current_input_placeholder == 'Set Offset':
+                    popup_pid.align(bg, lv.ALIGN.CENTER, 0, 0)
 
         # init keyboard
-        kb = lv.kb(popup_pid_params)
+        kb = lv.kb(bg)
         kb.set_cursor_manage(True)
+        kb.set_event_cb(keyboard_event_cb)
         lv.kb.set_mode(kb, lv.kb.MODE.NUM)
         rel_style = lv.style_t()
         pr_style = lv.style_t()
@@ -498,25 +484,81 @@ class GUI:
         kb.set_style(lv.kb.STYLE.BTN_REL, rel_style)
         kb.set_style(lv.kb.STYLE.BTN_PR, pr_style)
 
+        # init text areas
+        kp_input = lv.ta(input_cont)
+        kp_input.set_text(self.pid_params.get('kp'))
+        kp_input.set_placeholder_text('Set Kp')
+        kp_input.set_accepted_chars('0123456789.+-')
+        kp_input.set_one_line(True)
+        kp_input.set_width(120)
+        kp_input.align(input_cont, lv.ALIGN.IN_TOP_MID, 30, 20)
+        kp_input.set_event_cb(input_event_cb)
+        kp_label = lv.label(input_cont)
+        kp_label.set_text("Kp: ")
+        kp_label.align(kp_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+        pid_title_label = lv.label(input_cont)
+        pid_title_label.set_text("PID Params:")
+        pid_title_label.align(kp_input, lv.ALIGN.OUT_TOP_LEFT, -65, 0)
+
+        ki_input = lv.ta(input_cont)
+        ki_input.set_text(self.pid_params.get('ki'))
+        ki_input.set_placeholder_text('Set Ki')
+        ki_input.set_accepted_chars('0123456789.+-')
+        ki_input.set_one_line(True)
+        ki_input.set_width(120)
+        ki_input.align(input_cont, lv.ALIGN.IN_TOP_MID, 30, 55)
+        ki_input.set_event_cb(input_event_cb)
+        ki_input.set_cursor_type(lv.CURSOR.LINE | lv.CURSOR.HIDDEN)
+        ki_label = lv.label(input_cont)
+        ki_label.set_text("Ki: ")
+        ki_label.align(ki_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+
+        kd_input = lv.ta(input_cont)
+        kd_input.set_text(self.pid_params.get('kd'))
+        kd_input.set_placeholder_text('Set Kd')
+        kd_input.set_accepted_chars('0123456789.+-')
+        kd_input.set_one_line(True)
+        kd_input.set_width(120)
+        kd_input.align(input_cont, lv.ALIGN.IN_TOP_MID, 30, 90)
+        kd_input.set_event_cb(input_event_cb)
+        kd_input.set_cursor_type(lv.CURSOR.LINE | lv.CURSOR.HIDDEN)
+        kd_label = lv.label(input_cont)
+        kd_label.set_text("Kd: ")
+        kd_label.align(kd_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+
+        temp_offset_input = lv.ta(input_cont)
+        temp_offset_input.set_text(self.temp_offset)
+        temp_offset_input.set_placeholder_text('Set Offset')
+        temp_offset_input.set_accepted_chars('0123456789.+-')
+        temp_offset_input.set_one_line(True)
+        temp_offset_input.set_width(120)
+        temp_offset_input.align(input_cont, lv.ALIGN.IN_TOP_MID, 30, 145)
+        temp_offset_input.set_event_cb(input_event_cb)
+        temp_offset_input.set_cursor_type(lv.CURSOR.LINE | lv.CURSOR.HIDDEN)
+        temp_offset_label = lv.label(input_cont)
+        temp_offset_label.set_text("Offset: ")
+        temp_offset_label.align(temp_offset_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+        offset_title_label = lv.label(input_cont)
+        offset_title_label.set_text("Temp Correction:")
+        offset_title_label.align(temp_offset_input, lv.ALIGN.OUT_TOP_LEFT, -65, 0)
+
         # set btns to mbox
         btns = ['Save', 'Cancel', '']
-        popup_pid_params.add_btns(btns)
+        popup_pid.add_btns(btns)
 
-        lv.cont.set_fit(popup_pid_params, lv.FIT.NONE)
-        mbox_style = popup_pid_params.get_style(popup_pid_params.STYLE.BTN_REL)
+        lv.cont.set_fit(popup_pid, lv.FIT.NONE)
+        mbox_style = popup_pid.get_style(popup_pid.STYLE.BTN_REL)
         popup_pid_style = lv.style_t()
         lv.style_copy(popup_pid_style, mbox_style)
-        popup_pid_style.body.padding.bottom = 96
-        popup_pid_params.set_style(popup_pid_params.STYLE.BTN_REL, popup_pid_style)
-
-        # TODO Need to check whether height is ok
-        popup_pid_params.set_height(186)
+        popup_pid_style.body.padding.bottom = 46
+        popup_pid.set_style(popup_pid.STYLE.BTN_REL, popup_pid_style)
+        popup_pid.set_size(220, 300)
 
         this = self
-
+        # TODO need to test the save function
         def event_handler(obj, event):
             if event == lv.EVENT.VALUE_CHANGED:
-                active_btn_text = popup_pid_params.get_active_btn_text()
+                active_btn_text = popup_pid.get_active_btn_text()
                 if active_btn_text == 'Save':
                     kp_value = float(kp_input.get_text())
                     ki_value = float(ki_input.get_text())
@@ -537,11 +579,13 @@ class GUI:
                     this.pid.reset(kp_value, ki_value, kd_value)
                     this.sensor.set_offset(temp_offset_value)
                 bg.del_async()
-                popup_pid_params.start_auto_close(5)
+                popup_pid.start_auto_close(5)
 
-        popup_pid_params.set_event_cb(event_handler)
-        popup_pid_params.align(None, lv.ALIGN.CENTER, 0, 0)
-        self.popup_pid = popup_pid_params
+        popup_pid.set_event_cb(event_handler)
+        popup_pid.align(bg, lv.ALIGN.CENTER, 0, 0)
+        kb.set_ta(kp_input)
+        kb.set_hidden(True)
+        self.popup_pid = popup_pid
         return self.popup_pid
 
     def start_btn_init(self):
