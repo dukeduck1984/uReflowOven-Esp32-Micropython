@@ -7,8 +7,6 @@ import lvgl as lv
 import lvesp32
 
 
-# TODO #1 adding settings for PID parameters and temp offset
-# TODO #2 get rid of temp calibration button
 class GUI:
     CHART_WIDTH = 240
     CHART_HEIGHT = 120
@@ -17,6 +15,8 @@ class GUI:
     def __init__(self, profiles_obj, config_dict):
         self.profiles = profiles_obj
         self.config = config_dict
+        self.pid_params = self.config.get('pid')
+        self.temp_offset = self.config.get('temp_offset')
         self.alloy_list = self.profiles.get_profile_alloy_names()
         self.has_started = False
         self.main_scr = lv.obj()
@@ -27,7 +27,7 @@ class GUI:
         self.profile_alloy_selector = self.profile_selector_init()
         self.start_btn, self.start_label = self.start_btn_init()
         self.stage_cont, self.stage_label = self.stage_init()
-        self.cali_btn = self.cali_btn_init()
+        self.settings_btn = self.settings_btn_init()
         self.temp_text = self.temp_init()
         self.led = self.led_init()
         self.line = None
@@ -35,7 +35,7 @@ class GUI:
         self.null_chart_point_list = None
         self.profile_detail_init()
         self.profile_alloy_selector.move_foreground()
-        self.show_cali_btn_hide_stage()
+        self.show_set_btn_hide_stage()
         self.reflow_process_start_cb = None
         self.reflow_process_stop_cb = None
         lv.scr_load(self.main_scr)
@@ -370,7 +370,7 @@ class GUI:
         popup_stop.set_event_cb(event_handler)
         popup_stop.align(None, lv.ALIGN.CENTER, 0, 0)
 
-    def popup_calibration(self):
+    def popup_settings(self):
         modal_style = lv.style_t()
         lv.style_copy(modal_style, lv.style_plain_color)
         modal_style.body.main_color = modal_style.body.grad_color = lv.color_make(0, 0, 0)
@@ -382,8 +382,8 @@ class GUI:
         bg.set_opa_scale_enable(True)
 
         popup_cali = lv.mbox(bg)
-        popup_cali.set_text('What would you like to calibrate?')
-        btns = ['Temp Sensor', '\n', 'Touch Screen', '\n', 'Cancel', '']
+        popup_cali.set_text('Settings')
+        btns = ['Set PID Params', '\n', 'Calibrate Touch', '\n', 'Close', '']
         popup_cali.add_btns(btns)
 
         lv.cont.set_fit(popup_cali, lv.FIT.NONE)
@@ -393,6 +393,7 @@ class GUI:
         popup_cali_style.body.padding.bottom = 96
         popup_cali.set_style(popup_cali.STYLE.BTN_REL, popup_cali_style)
 
+        # TODO Need to check whether height is ok
         popup_cali.set_height(186)
 
         this = self
@@ -401,17 +402,20 @@ class GUI:
             if event == lv.EVENT.VALUE_CHANGED:
                 active_btn_text = popup_cali.get_active_btn_text()
                 tim = machine.Timer(-1)
-                if active_btn_text == 'Temp Sensor':
-                    this.config['has_calibrated'] = False
-                    with open('config.json', 'w') as f:
-                        ujson.dump(this.config, f)
-                    tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t:machine.reset())
-                elif active_btn_text == 'Touch Screen':
+                # Note: With PID, temp calibration no longer needed
+                # if active_btn_text == 'Temp Sensor':
+                #     this.config['has_calibrated'] = False
+                #     with open('config.json', 'w') as f:
+                #         ujson.dump(this.config, f)
+                #     tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t:machine.reset())
+                # elif active_btn_text == 'Touch Screen':
+                if active_btn_text == 'Calibrate Touch':
                     uos.remove(this.config.get('touch_cali_file'))
                     tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t:machine.reset())
+                elif active_btn_text == 'Set PID Params':
+                    this.popup_pid_params()
                 else:
                     tim.deinit()
-
                 bg.del_async()
                 popup_cali.start_auto_close(5)
 
@@ -419,6 +423,120 @@ class GUI:
         popup_cali.align(None, lv.ALIGN.CENTER, 0, 0)
         self.popup_cali = popup_cali
         return self.popup_cali
+
+    # TODO Need to test the layout of the new popup window
+    def popup_pid_params(self):
+        modal_style = lv.style_t()
+        lv.style_copy(modal_style, lv.style_plain_color)
+        modal_style.body.main_color = modal_style.body.grad_color = lv.color_make(0, 0, 0)
+        modal_style.body.opa = lv.OPA._50
+        bg = lv.obj(self.main_scr)
+        bg.set_style(modal_style)
+        bg.set_pos(0, 0)
+        bg.set_size(self.main_scr.get_width(), self.main_scr.get_height())
+        bg.set_opa_scale_enable(True)
+
+        # init mbox and title
+        popup_pid_params = lv.mbox(bg)
+        popup_pid_params.set_text('Set PID Params')
+
+        # init text areas
+        kp_input = lv.ta(popup_pid_params)
+        kp_input.set_text(self.pid_params.get('kp'))
+        kp_input.set_accepted_chars(kp_input, '0123456789.+-')
+        kp_input.set_one_line(True)
+        kp_input.set_width(80)
+        kp_label = lv.label(popup_pid_params)
+        kp_label.set_text("Kp:")
+        kp_label.align(kp_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+        pid_title_label = lv.label(popup_pid_params)
+        pid_title_label.set_text("PID:")
+        pid_title_label.align(kp_label, lv.ALIGN.OUT_LEFT_TOP, 0, 0)
+
+        ki_input = lv.ta(popup_pid_params)
+        ki_input.set_text(self.pid_params.get('ki'))
+        ki_input.set_accepted_chars(ki_input, '0123456789.+-')
+        ki_input.set_one_line(True)
+        ki_input.set_width(80)
+        ki_label = lv.label(popup_pid_params)
+        ki_label.set_text("Ki:")
+        ki_label.align(ki_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+
+        kd_input = lv.ta(popup_pid_params)
+        kd_input.set_text(self.pid_params.get('kd'))
+        kd_input.set_accepted_chars(kd_input, '0123456789.+-')
+        kd_input.set_one_line(True)
+        kd_input.set_width(80)
+        kd_label = lv.label(popup_pid_params)
+        kd_label.set_text("Kd:")
+        kd_label.align(kd_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+
+        temp_offset_input = lv.ta(popup_pid_params)
+        temp_offset_input.set_text(self.temp_offset)
+        temp_offset_input.set_accepted_chars(temp_offset_input, '0123456789.+-')
+        temp_offset_input.set_one_line(True)
+        temp_offset_input.set_width(80)
+        temp_offset_label = lv.label(popup_pid_params)
+        temp_offset_label.set_text("Temp Offset:")
+        temp_offset_label.align(temp_offset_input, lv.ALIGN.OUT_LEFT_TOP, 0, 0)
+
+        # init keyboard
+        kb = lv.kb(popup_pid_params)
+        kb.set_cursor_manage(True)
+        lv.kb.set_mode(kb, lv.kb.MODE.NUM)
+        rel_style = lv.style_t()
+        pr_style = lv.style_t()
+        lv.style_copy(rel_style, lv.style_btn_rel)
+        rel_style.body.radius = 0
+        rel_style.body.border.width = 1
+        lv.style_copy(pr_style, lv.style_btn_pr)
+        pr_style.body.radius = 0
+        pr_style.body.border.width = 1
+        kb.set_style(lv.kb.STYLE.BG, lv.style_transp_tight)
+        kb.set_style(lv.kb.STYLE.BTN_REL, rel_style)
+        kb.set_style(lv.kb.STYLE.BTN_PR, pr_style)
+
+        # set btns to mbox
+        btns = ['Save', 'Cancel', '']
+        popup_pid_params.add_btns(btns)
+
+        lv.cont.set_fit(popup_pid_params, lv.FIT.NONE)
+        mbox_style = popup_pid_params.get_style(popup_pid_params.STYLE.BTN_REL)
+        popup_pid_style = lv.style_t()
+        lv.style_copy(popup_pid_style, mbox_style)
+        popup_pid_style.body.padding.bottom = 96
+        popup_pid_params.set_style(popup_pid_params.STYLE.BTN_REL, popup_pid_style)
+
+        # TODO Need to check whether height is ok
+        popup_pid_params.set_height(186)
+
+        this = self
+
+        def event_handler(obj, event):
+            if event == lv.EVENT.VALUE_CHANGED:
+                active_btn_text = popup_pid_params.get_active_btn_text()
+                if active_btn_text == 'Save':
+                    kp_value = float(kp_input.get_text())
+                    ki_value = float(ki_input.get_text())
+                    kd_value = float(kd_input.get_text())
+                    temp_offset_value = float(temp_offset_input.get_text())
+                    this.config['pid'] = {
+                        'kp': kp_value,
+                        'ki': ki_value,
+                        'kd': kd_value
+                    }
+                    this.config['temp_offset'] = temp_offset_value
+                    this.pid_params = this.config.get('pid')
+                    this.temp_offset = this.config.get('temp_offset')
+                    with open('config.json', 'w') as f:
+                        ujson.dump(this.config, f)
+                bg.del_async()
+                popup_pid_params.start_auto_close(5)
+
+        popup_pid_params.set_event_cb(event_handler)
+        popup_pid_params.align(None, lv.ALIGN.CENTER, 0, 0)
+        self.popup_pid = popup_pid_params
+        return self.popup_pid
 
     def start_btn_init(self):
         """
@@ -460,21 +578,21 @@ class GUI:
         """
         self.start_label.set_text(lv.SYMBOL.PLAY + ' Start')
 
-    def cali_btn_init(self):
+    def settings_btn_init(self):
         # Cali Button
         this = self
 
-        def cali_btn_handler(obj, event):
+        def settings_btn_handler(obj, event):
             if event == lv.EVENT.CLICKED:
                 # let user choose what to calibrate: touch screen or temp
-                this.popup_calibration()
+                this.popup_settings()
 
         cali_btn = lv.btn(self.main_scr)
         cali_btn.set_size(140, 38)
         cali_btn.align(self.start_btn, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 5)
-        cali_btn.set_event_cb(cali_btn_handler)
+        cali_btn.set_event_cb(settings_btn_handler)
         cali_label = lv.label(cali_btn)
-        cali_label.set_text(lv.SYMBOL.SETTINGS + ' Calibration')
+        cali_label.set_text(lv.SYMBOL.SETTINGS + ' Settings')
         return cali_btn
 
     def stage_init(self):
@@ -504,19 +622,19 @@ class GUI:
         """
         self.stage_label.set_text(text)
 
-    def show_stage_hide_cali_btn(self):
+    def show_stage_hide_set_btn(self):
         """
         Hide the calibration button to show the stage info.
         """
         self.stage_cont.set_hidden(False)
-        self.cali_btn.set_hidden(True)
+        self.settings_btn.set_hidden(True)
 
-    def show_cali_btn_hide_stage(self):
+    def show_set_btn_hide_stage(self):
         """
         Hide the stage info to show the calibration button
         """
         self.stage_cont.set_hidden(True)
-        self.cali_btn.set_hidden(False)
+        self.settings_btn.set_hidden(False)
 
     def add_reflow_process_start_cb(self, start_cb):
         self.reflow_process_start_cb = start_cb
@@ -530,7 +648,7 @@ class GUI:
             self.set_start_btn_to_stop()
             # disable the alloy selector
             self.disable_alloy_selector(is_on)
-            self.show_stage_hide_cali_btn()
+            self.show_stage_hide_set_btn()
             # clear temp chart data
             self.chart_clear()
             # save selected alloy to config.json as default_alloy
@@ -542,6 +660,6 @@ class GUI:
             self.has_started = is_off
             self.reset_start_btn()
             self.disable_alloy_selector(is_off)
-            self.show_cali_btn_hide_stage()
+            self.show_set_btn_hide_stage()
             if self.reflow_process_stop_cb:
                 self.reflow_process_stop_cb()
