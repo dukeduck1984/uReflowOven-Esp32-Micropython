@@ -117,8 +117,6 @@ else:
 
     reflow_profiles = LoadProfiles(DEFAULT_ALLOY)
 
-    gui = GUI(reflow_profiles, config)
-
     temp_sensor = MAX31855(hwspi=TEMP_HWSPI,
                            cs=TEMP_CS,
                            miso=TEMP_MISO,
@@ -155,5 +153,7 @@ else:
     buzzer_th = _thread.start_new_thread(buzzer_activate, ())
 
     pid = PID(KP, KI, KD)
+
+    gui = GUI(reflow_profiles, config, pid, temp_sensor)
 
     oven_control = OvenControl(oven, temp_sensor, pid, reflow_profiles, gui, buzzer, timer, config)

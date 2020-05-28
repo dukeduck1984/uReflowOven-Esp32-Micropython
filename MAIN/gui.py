@@ -12,9 +12,11 @@ class GUI:
     CHART_HEIGHT = 120
     CHART_TOP_PADDING = 10
 
-    def __init__(self, profiles_obj, config_dict):
+    def __init__(self, profiles_obj, config_dict, pid_obj, sensor_obj):
         self.profiles = profiles_obj
         self.config = config_dict
+        self.pid = pid_obj
+        self.sensor = sensor_obj
         self.pid_params = self.config.get('pid')
         self.temp_offset = self.config.get('temp_offset')
         self.alloy_list = self.profiles.get_profile_alloy_names()
@@ -528,8 +530,12 @@ class GUI:
                     this.config['temp_offset'] = temp_offset_value
                     this.pid_params = this.config.get('pid')
                     this.temp_offset = this.config.get('temp_offset')
+                    # Save settings to config.json
                     with open('config.json', 'w') as f:
                         ujson.dump(this.config, f)
+                    # Apply settings immediately
+                    this.pid.reset(kp_value, ki_value, kd_value)
+                    this.sensor.set_offset(temp_offset_value)
                 bg.del_async()
                 popup_pid_params.start_auto_close(5)
 
