@@ -26,6 +26,7 @@
         "miso": 33,
         "sck": 32
     },
+    "sampling_hz": 10,
     "temp_offset": 0.0,
     "pid": {
         "kp": 2.0,

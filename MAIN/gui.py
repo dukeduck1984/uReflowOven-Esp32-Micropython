@@ -112,7 +112,7 @@ class GUI:
 
     def draw_profile_line(self, points):
         """
-        Draw ideal reflow temp profile over the chart per selection
+        Draw reflow temp profile over the chart per selection
         """
         style_line = lv.style_t()
         lv.style_copy(style_line, lv.style_transp)
@@ -382,26 +382,24 @@ class GUI:
         bg.set_size(self.main_scr.get_width(), self.main_scr.get_height())
         bg.set_opa_scale_enable(True)
 
-        popup_cali = lv.mbox(bg)
-        popup_cali.set_text('Settings')
+        popup_settings = lv.mbox(bg)
+        popup_settings.set_text('Settings')
         btns = ['Set PID Params', '\n', 'Calibrate Touch', '\n', 'Close', '']
-        popup_cali.add_btns(btns)
+        popup_settings.add_btns(btns)
 
-        lv.cont.set_fit(popup_cali, lv.FIT.NONE)
-        mbox_style = popup_cali.get_style(popup_cali.STYLE.BTN_REL)
+        lv.cont.set_fit(popup_settings, lv.FIT.NONE)
+        mbox_style = popup_settings.get_style(popup_settings.STYLE.BTN_REL)
         popup_cali_style = lv.style_t()
         lv.style_copy(popup_cali_style, mbox_style)
-        popup_cali_style.body.padding.bottom = 96
-        popup_cali.set_style(popup_cali.STYLE.BTN_REL, popup_cali_style)
-
-        # TODO Need to check whether height is ok
-        popup_cali.set_height(186)
+        popup_cali_style.body.padding.bottom = 115
+        popup_settings.set_style(popup_settings.STYLE.BTN_REL, popup_cali_style)
+        popup_settings.set_height(186)
 
         this = self
 
         def event_handler(obj, event):
             if event == lv.EVENT.VALUE_CHANGED:
-                active_btn_text = popup_cali.get_active_btn_text()
+                active_btn_text = popup_settings.get_active_btn_text()
                 tim = machine.Timer(-1)
                 # Note: With PID, temp calibration no longer needed
                 # if active_btn_text == 'Temp Sensor':
@@ -412,20 +410,23 @@ class GUI:
                 # elif active_btn_text == 'Touch Screen':
                 if active_btn_text == 'Calibrate Touch':
                     uos.remove(this.config.get('touch_cali_file'))
-                    tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t:machine.reset())
+                    tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t: machine.reset())
                 elif active_btn_text == 'Set PID Params':
                     this.popup_pid_params()
                 else:
                     tim.deinit()
                 bg.del_async()
-                popup_cali.start_auto_close(5)
+                popup_settings.start_auto_close(5)
 
-        popup_cali.set_event_cb(event_handler)
-        popup_cali.align(None, lv.ALIGN.CENTER, 0, 0)
-        self.popup_cali = popup_cali
-        return self.popup_cali
+        popup_settings.set_event_cb(event_handler)
+        popup_settings.align(None, lv.ALIGN.CENTER, 0, 0)
+        self.popup_settings = popup_settings
+        return self.popup_settings
 
     def popup_pid_params(self):
+        """
+        The popup window of PID params settings
+        """
         current_input_placeholder = 'Set Kp'
         modal_style = lv.style_t()
         lv.style_copy(modal_style, lv.style_plain_color)
@@ -555,7 +556,6 @@ class GUI:
         popup_pid.set_size(220, 300)
 
         this = self
-        # TODO need to test the save function
         def event_handler(obj, event):
             if event == lv.EVENT.VALUE_CHANGED:
                 active_btn_text = popup_pid.get_active_btn_text()
@@ -637,13 +637,13 @@ class GUI:
                 # let user choose what to calibrate: touch screen or temp
                 this.popup_settings()
 
-        cali_btn = lv.btn(self.main_scr)
-        cali_btn.set_size(140, 38)
-        cali_btn.align(self.start_btn, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 5)
-        cali_btn.set_event_cb(settings_btn_handler)
-        cali_label = lv.label(cali_btn)
+        settings_btn = lv.btn(self.main_scr)
+        settings_btn.set_size(140, 38)
+        settings_btn.align(self.start_btn, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 5)
+        settings_btn.set_event_cb(settings_btn_handler)
+        cali_label = lv.label(settings_btn)
         cali_label.set_text(lv.SYMBOL.SETTINGS + ' Settings')
-        return cali_btn
+        return settings_btn
 
     def stage_init(self):
         # Stage Container

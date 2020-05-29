@@ -39,6 +39,8 @@ TEMP_SCK = max31855_setup.get('sck')
 TEMP_MISO = max31855_setup.get('miso')
 TEMP_OFFSET = config.get('temp_offset')
 
+SAMPLING_HZ = config.get('sampling_hz')
+
 pid_setup = config.get('pid')
 KP = pid_setup.get('kp')
 KI = pid_setup.get('ki')
@@ -136,7 +138,7 @@ else:
             except Exception:
                 print('Error occurs when measuring temperature.')
             gui.temp_update(temp_sensor.get_temp())
-            utime.sleep_ms(100)
+            utime.sleep_ms(int(1000/SAMPLING_HZ))
 
 
     def buzzer_activate():
