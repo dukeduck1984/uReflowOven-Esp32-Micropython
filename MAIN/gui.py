@@ -40,6 +40,7 @@ class GUI:
         self.show_set_btn_hide_stage()
         self.reflow_process_start_cb = None
         self.reflow_process_stop_cb = None
+        self.current_input_placeholder = 'Set Kp'
         lv.scr_load(self.main_scr)
 
     def profile_detail_init(self):
@@ -395,8 +396,6 @@ class GUI:
         popup_settings.set_style(popup_settings.STYLE.BTN_REL, popup_cali_style)
         popup_settings.set_height(186)
 
-        this = self
-
         def event_handler(obj, event):
             if event == lv.EVENT.VALUE_CHANGED:
                 active_btn_text = popup_settings.get_active_btn_text()
@@ -409,10 +408,10 @@ class GUI:
                 #     tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t:machine.reset())
                 # elif active_btn_text == 'Touch Screen':
                 if active_btn_text == 'Calibrate Touch':
-                    uos.remove(this.config.get('touch_cali_file'))
+                    uos.remove(self.config.get('touch_cali_file'))
                     tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t: machine.reset())
                 elif active_btn_text == 'Set PID Params':
-                    this.popup_pid_params()
+                    tim.init(period=50, mode=machine.Timer.ONE_SHOT, callback=lambda t: self.popup_pid_params())
                 else:
                     tim.deinit()
                 bg.del_async()
@@ -420,14 +419,11 @@ class GUI:
 
         popup_settings.set_event_cb(event_handler)
         popup_settings.align(None, lv.ALIGN.CENTER, 0, 0)
-        self.popup_settings = popup_settings
-        return self.popup_settings
 
     def popup_pid_params(self):
         """
         The popup window of PID params settings
         """
-        current_input_placeholder = 'Set Kp'
         modal_style = lv.style_t()
         lv.style_copy(modal_style, lv.style_plain_color)
         modal_style.body.main_color = modal_style.body.grad_color = lv.color_make(0, 0, 0)
@@ -448,10 +444,9 @@ class GUI:
         input_cont.set_size(210, 180)
 
         def input_event_cb(ta, event):
-            global current_input_placeholder, popup_pid
             if event == lv.EVENT.CLICKED:
-                current_input_placeholder = ta.get_placeholder_text()
-                if current_input_placeholder == 'Set Offset':
+                self.current_input_placeholder = ta.get_placeholder_text()
+                if self.current_input_placeholder == 'Set Offset':
                     popup_pid.align(bg, lv.ALIGN.CENTER, 0, -55)
                 else:
                     popup_pid.align(bg, lv.ALIGN.CENTER, 0, 0)
@@ -464,8 +459,7 @@ class GUI:
             event_kb.def_event_cb(event)
             if event == lv.EVENT.CANCEL or event == lv.EVENT.APPLY:
                 kb.set_hidden(True)
-                global current_input_placeholder
-                if current_input_placeholder == 'Set Offset':
+                if self.current_input_placeholder == 'Set Offset':
                     popup_pid.align(bg, lv.ALIGN.CENTER, 0, 0)
 
         # init keyboard
@@ -487,7 +481,7 @@ class GUI:
 
         # init text areas
         kp_input = lv.ta(input_cont)
-        kp_input.set_text(self.pid_params.get('kp'))
+        kp_input.set_text(str(self.pid_params.get('kp')))
         kp_input.set_placeholder_text('Set Kp')
         kp_input.set_accepted_chars('0123456789.+-')
         kp_input.set_one_line(True)
@@ -502,7 +496,7 @@ class GUI:
         pid_title_label.align(kp_input, lv.ALIGN.OUT_TOP_LEFT, -65, 0)
 
         ki_input = lv.ta(input_cont)
-        ki_input.set_text(self.pid_params.get('ki'))
+        ki_input.set_text(str(self.pid_params.get('ki')))
         ki_input.set_placeholder_text('Set Ki')
         ki_input.set_accepted_chars('0123456789.+-')
         ki_input.set_one_line(True)
@@ -515,7 +509,7 @@ class GUI:
         ki_label.align(ki_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
 
         kd_input = lv.ta(input_cont)
-        kd_input.set_text(self.pid_params.get('kd'))
+        kd_input.set_text(str(self.pid_params.get('kd')))
         kd_input.set_placeholder_text('Set Kd')
         kd_input.set_accepted_chars('0123456789.+-')
         kd_input.set_one_line(True)
@@ -528,7 +522,7 @@ class GUI:
         kd_label.align(kd_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
 
         temp_offset_input = lv.ta(input_cont)
-        temp_offset_input.set_text(self.temp_offset)
+        temp_offset_input.set_text(str(self.temp_offset))
         temp_offset_input.set_placeholder_text('Set Offset')
         temp_offset_input.set_accepted_chars('0123456789.+-')
         temp_offset_input.set_one_line(True)
@@ -555,7 +549,6 @@ class GUI:
         popup_pid.set_style(popup_pid.STYLE.BTN_REL, popup_pid_style)
         popup_pid.set_size(220, 300)
 
-        this = self
         def event_handler(obj, event):
             if event == lv.EVENT.VALUE_CHANGED:
                 active_btn_text = popup_pid.get_active_btn_text()
@@ -564,20 +557,20 @@ class GUI:
                     ki_value = float(ki_input.get_text())
                     kd_value = float(kd_input.get_text())
                     temp_offset_value = float(temp_offset_input.get_text())
-                    this.config['pid'] = {
+                    self.config['pid'] = {
                         'kp': kp_value,
                         'ki': ki_value,
                         'kd': kd_value
                     }
-                    this.config['temp_offset'] = temp_offset_value
-                    this.pid_params = this.config.get('pid')
-                    this.temp_offset = this.config.get('temp_offset')
+                    self.config['temp_offset'] = temp_offset_value
+                    self.pid_params = self.config.get('pid')
+                    self.temp_offset = self.config.get('temp_offset')
                     # Save settings to config.json
                     with open('config.json', 'w') as f:
-                        ujson.dump(this.config, f)
+                        ujson.dump(self.config, f)
                     # Apply settings immediately
-                    this.pid.reset(kp_value, ki_value, kd_value)
-                    this.sensor.set_offset(temp_offset_value)
+                    self.pid.reset(kp_value, ki_value, kd_value)
+                    self.sensor.set_offset(temp_offset_value)
                 bg.del_async()
                 popup_pid.start_auto_close(5)
 
@@ -585,8 +578,6 @@ class GUI:
         popup_pid.align(bg, lv.ALIGN.CENTER, 0, 0)
         kb.set_ta(kp_input)
         kb.set_hidden(True)
-        self.popup_pid = popup_pid
-        return self.popup_pid
 
     def start_btn_init(self):
         """
@@ -630,12 +621,10 @@ class GUI:
 
     def settings_btn_init(self):
         # Cali Button
-        this = self
-
         def settings_btn_handler(obj, event):
             if event == lv.EVENT.CLICKED:
                 # let user choose what to calibrate: touch screen or temp
-                this.popup_settings()
+                self.popup_settings()
 
         settings_btn = lv.btn(self.main_scr)
         settings_btn.set_size(140, 38)

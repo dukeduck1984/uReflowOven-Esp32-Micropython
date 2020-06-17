@@ -245,7 +245,11 @@ class OvenControl:
             self.set_oven_state('start')
         # initialize the hardware timer to call the control callback once every 100ms
         # With PID, the period of the timer should be 100ms now
-        self.tim.init(period=int(1000/self.sampling_hz), mode=machine.Timer.PERIODIC, callback=lambda t: self._control_cb_handler())
+        self.tim.init(
+            period=int(1000/self.sampling_hz),
+            mode=machine.Timer.PERIODIC,
+            callback=lambda t: self._control_cb_handler()
+        )
 
     def reflow_process_stop(self):
         """

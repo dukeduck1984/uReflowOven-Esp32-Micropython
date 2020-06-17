@@ -1,4 +1,5 @@
 import machine
+import network
 import ujson
 import uos
 
@@ -131,13 +132,18 @@ else:
 
     timer = machine.Timer(0)
 
+    TEMP_GUI_LAST_UPDATE = utime.ticks_ms()
+
     def measure_temp():
+        global TEMP_GUI_LAST_UPDATE
         while True:
             try:
                 temp_sensor.read_temp()
             except Exception:
                 print('Error occurs when measuring temperature.')
-            gui.temp_update(temp_sensor.get_temp())
+            if utime.ticks_diff(utime.ticks_ms(), TEMP_GUI_LAST_UPDATE) >= 1000:
+                gui.temp_update(temp_sensor.get_temp())
+                TEMP_GUI_LAST_UPDATE = utime.ticks_ms()
             utime.sleep_ms(int(1000/SAMPLING_HZ))
 
 
@@ -159,3 +165,12 @@ else:
     gui = GUI(reflow_profiles, config, pid, temp_sensor)
 
     oven_control = OvenControl(oven, temp_sensor, pid, reflow_profiles, gui, buzzer, timer, config)
+
+# Starting FTP service for future updates
+ap = network.WLAN(network.AP_IF)
+ap.config(essid='uReflow Oven ftp://192.168.4.1')
+ap.active(True)
+while not ap.active():
+    utime.sleep_ms(500)
+else:
+    import uftpd
