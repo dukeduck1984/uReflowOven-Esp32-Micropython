@@ -2,7 +2,13 @@
 
 [中文版请见于此](./readme_zh.md)。
 
-This project is modifided and rewritten on top of [Adafruit EZ Make Oven](https://learn.adafruit.com/ez-make-oven?view=all).
+Updated! Now the μReflow Oven is PID control enabled!
+
+![](./pic/pid.jpg)
+
+For previous version which is non-PID controlled, pls see the branch ```Adafruit-EZ-Make-Oven-alike```.
+
+This project is an improved and heavily modified version of [Adafruit EZ Make Oven](https://learn.adafruit.com/ez-make-oven?view=all).
 The original code of EZ Make Oven can be found [here](https://github.com/adafruit/Adafruit_Learning_System_Guides/tree/master/PyPortal_EZ_Make_Oven).
 
 ![](./pic/overview.jpg)
@@ -37,24 +43,43 @@ on and off via the solid state relay.
 ### The Firmware for ESP32
 * Pls refer to [here](./FIRMWARE/readme.md).
 
+### Configuration
+* Configuration is done by editing the ```config.json``` file.
+* Hardware wiring: edit the value of the key names ending with '_pins' to match your actual wiring.
+* The TFT screen and the touch controller share the same ```Clock```, ```Data In``` & ```Data Out``` pins.
+* The ACC pin of the TFT screen is for powering on the display.
+* ```sampling_hz``` determines the update rate of the temp sensor and the PID controller.  The default setting ```5``` 
+means 5HZ which is 5 times per second.
+* ```temp_offset``` & ```pid``` parameters can be set in the settings of the GUI.
+* ```advanced_temp_tuning``` can only be changed by editing the ```config.json```.
+    * ```preheat_until``` (temperature in Celsius) is used to set a temperature below which the oven will always be on - it helps to 
+    heat up the oven as quickly as possible at the early stage.
+    * ```provisioning```  (time in Second) is for the PID to look for the set temp X seconds ahead, as the reflow
+    temperature profile is not constant but a changing curve, this parameter will make the PID more reactive.
+    * ```overshoot_comp``` (temperature in Celsius) it helps reduce the overshoot.
+    
+### Fine Tuning
+* The above mentioned ```advanced_temp_tuning``` may need some trial and error.  To make the fine tuning
+process a bit easier, the ESP32 will create a WiFi access point named ```uReflow Oven ftp://192.168.4.1```
+* Simply connect to that SSID and you can edit the ```config.json``` by logging in 192.168.4.1:21
+ via an FTP client, e.g. ```FileZiila```.
+
 ### Installation
 * All files are under ```MAIN``` folder.
 * After flashing the firmware, you need to edit ```config.json``` to change the GPIO pin numbers according 
 to how you wiring your TFT display and other components.
-* Make sure ```"has_calibrated": ``` should be ```false```
 * Transfer all the files and folder under ```MAIN``` to the ESP32 dev board and you are good to go.
 
 ### Usage Guide
-* Upon powering on the first time, you will be guided through touch screen calibration and 
-temperature calibration, throughout which the ESP32 board will reboot a couple of times.  Just
-follow the guide.
+* Upon powering on the first time, you will be guided through touch screen calibration, once finished, the ESP32
+will reboot.
 * After calibration and reboot, the GUI will load, where you can select Solder Paste type from the
 drop-down menu, just choose the type you'll use, and the reflow temperature profile will show down below.
 * If your solder paste isn't there in the menu, you can build your own solder profile files.  Pls refer to: 
 https://learn.adafruit.com/ez-make-oven?view=all#the-toaster-oven, under chapter "Solder Paste Profiles".
 The new solder profile json file should be put under folder ```profiles```.
 * All set and click "Start" button to start the reflow soldering procress.
-* If you wish to re-calibrate either the temperature curve or touch screen, click the 'Calibration' button
+* If you wish to re-calibrate the touch screen, click the 'Settings' button
 on the screen, and choose from the popup window.  And follow the on-screen instruction.
 
 [lv]:https://github.com/littlevgl/lv_binding_micropython
