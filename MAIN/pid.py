@@ -16,7 +16,7 @@ class PID:
         setpoint: float; target temperature to achieve
         return: float; temperature correction
         """
-        error = setpoint - temp
+        error = float(setpoint) - float(temp)
         if self.last_error == 0:
             self.last_error = error #catch first run error
 
@@ -28,7 +28,7 @@ class PID:
 
         I_value = self.integration * self.k_i
 
-        self.last_output = max(min(P_value + I_value + D_value, 15), -15)
+        self.last_output = max(min(P_value + I_value + D_value, 15), -200)
         return self.last_output
 
     def reset(self, kp=0, ki=0, kd=0):

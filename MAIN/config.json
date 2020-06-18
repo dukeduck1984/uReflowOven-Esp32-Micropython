@@ -29,8 +29,13 @@
     "sampling_hz": 5,
     "temp_offset": 0.0,
     "pid": {
-        "kp": 2.0,
+        "kp": 1.0,
         "ki": 0.001,
-        "kd": 20.0
+        "kd": 10.0
+    },
+    "advanced_temp_tuning": {
+        "preheat_until": 40,
+        "provisioning": 5,
+        "overshoot_comp": 10
     }
 }
