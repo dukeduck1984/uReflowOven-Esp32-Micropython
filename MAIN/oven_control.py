@@ -25,13 +25,13 @@ class OvenControl:
         self.reflow_start = 0
         self.oven_state = 'ready'
         self.last_state = 'ready'
-        self.timediff = 0
-        self.preheat_timediff = 0
+        self.timer_timediff = 0
+        self.stage_timediff = 0
         self.stage_text = ''
         self.temp_points = []
         self.has_started = False
-        self.start_time = None
-        self.preheat_start_time = None
+        self.timer_start_time = None
+        self.stage_start_time = None
         self.timer_last_called = None
         self.oven_reset()
         self.format_time(0)
@@ -94,7 +94,7 @@ class OvenControl:
                 self.set_oven_state("start")
         if self.oven_state == "start":
             self.oven_enable(True)
-        if self.oven_state == "start" and temp >= int(stages.get('preheat')[1]*0.6):
+        if self.oven_state == "start" and temp >= stages.get('preheat')[1]:
             self.set_oven_state("preheat")
         if self.oven_state == "preheat" and temp >= stages.get("soak")[1]:
             self.set_oven_state("soak")
@@ -114,16 +114,14 @@ class OvenControl:
 
         if self.oven_state in ("start", "preheat", "soak", "reflow"):
             # oven temp control here
-            # check range of calibration to catch any humps in the graph
             current_temp = self.sensor.get_temp()
             if self.oven_state == 'start':
-                set_temp = self.get_profile_temp(int(self.timediff + self.PROVISIONING)) - self.OVERSHOOT_COMP
+                new_start_time = self.stage_timediff
             else:
-                new_start_time = self.preheat_timediff + stages.get('preheat')[0]
-                set_temp = self.get_profile_temp(int(new_start_time + self.PROVISIONING)) - self.OVERSHOOT_COMP
+                new_start_time = self.stage_timediff + stages.get(self.oven_state)[0]
+            set_temp = self.get_profile_temp(int(new_start_time + self.PROVISIONING)) - self.OVERSHOOT_COMP
             # Ignore PID & keep heating on during the early stage
-            if current_temp < self.PREHEAT_UNTIL \
-                    or (self.oven_state == 'start' and self.timediff < stages.get('soak')[0]//2):
+            if current_temp < self.PREHEAT_UNTIL or self.oven_state == 'start':
                 self.oven_enable(True)
             else:
                 pid_output = self.pid.update(current_temp, set_temp)
@@ -132,7 +130,6 @@ class OvenControl:
                     self.oven_enable(True)
                 else:
                     self.oven_enable(False)
-                # print('Current: ' + str(round(current_temp, 2)) + '; Target: ' + str(round(target_temp, 2)))
 
     def _chart_update(self):
         low_end = self.profiles.get_temp_range()[0]
@@ -143,18 +140,26 @@ class OvenControl:
 
     def _elapsed_timer_update(self):
         now = utime.time()
-        self.timediff = int(now - self.start_time)
-        if self.preheat_start_time:
-            self.preheat_timediff = int(now - self.preheat_start_time)
-        self.format_time(self.timediff)
+        self.timer_timediff = int(now - self.timer_start_time)
+        self.format_time(self.timer_timediff)
 
     def _start_timimg(self):
         # the elapsed timer starts here
         if self.oven_state == 'start' and (self.last_state == 'ready' or self.last_state == 'wait'):
-            self.start_time = utime.time()
+            self.timer_start_time = utime.time()
         # the reflow timer starts here
         if self.oven_state == 'reflow' and self.last_state != "reflow":
             self.reflow_start = utime.time()
+        # Reset the stage timer when a new stage starts
+        if self.oven_state != self.last_state:
+            self.stage_start_time = utime.time()
+        # Reset the stage timer when the temp reaches the low end
+        if self.temp_points:
+            if len(self.temp_points) == 1:
+                self.stage_start_time = utime.time()
+        # Update stage time diff
+        if self.stage_start_time:
+            self.stage_timediff = int(utime.time() - self.stage_start_time)
 
     def _oven_state_change_timing_alert(self):
         self._start_timimg()
@@ -167,8 +172,6 @@ class OvenControl:
                 pass
             elif self.oven_state == 'wait':
                 self.beep.activate('TAG')
-            elif self.oven_state == 'preheat':
-                self.preheat_start_time = utime.time()
             else:
                 self.beep.activate('Next')
             # Update stage message to user
@@ -225,8 +228,8 @@ class OvenControl:
             self.set_oven_state('wait')
         else:
             self.set_oven_state('start')
-        # initialize the hardware timer to call the control callback once every 100ms
-        # With PID, the period of the timer should be 100ms now
+        # initialize the hardware timer to call the control callback once every 200ms
+        # With PID, the period of the timer should be 200ms now
         self.tim.init(
             period=int(1000 / self.SAMPLING_HZ),
             mode=machine.Timer.PERIODIC,
@@ -240,9 +243,9 @@ class OvenControl:
         self.tim.deinit()
         self.has_started = False
         self.oven_reset()
-        self.start_time = None
-        self.timediff = 0
-        self.format_time(self.timediff)
+        self.timer_start_time = None
+        self.timer_timediff = 0
+        self.format_time(self.timer_timediff)
         self.stage_text = ''
         self.gui.set_stage_text(self.stage_text)
         self.set_oven_state('ready')
