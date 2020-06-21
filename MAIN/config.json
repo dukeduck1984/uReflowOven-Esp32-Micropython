@@ -4,7 +4,10 @@
     "has_calibrated": true,
     "calibrate_temp": 29.5625,
     "calibrate_seconds": 37,
-    "oven_pin": 21,
+    "heater_pins": {
+        "heater": 21,
+        "heater_active_low": false
+    },
     "tft_pins": {
         "miso": 5,
         "mosi": 18,

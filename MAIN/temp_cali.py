@@ -2,6 +2,7 @@ import utime
 import machine
 import ujson
 from max31855 import MAX31855
+from heater import Heater
 
 import lvgl as lv
 import lvesp32
@@ -15,7 +16,12 @@ class TempCali:
                                miso=self.config['max31855_pins']['miso'],
                                sck=self.config['max31855_pins']['sck'],
                                offset=self.config['temp_offset'])
-        self.oven = machine.Pin(self.config['oven_pin'], machine.Pin.OUT, value=0)
+
+        heater_setup = config.get('heater_pins')
+        HEATER_PIN = heater_setup.get('heater')
+        HEATER_ACTIVE_LOW = heater_setup.get('heater_active_low')
+        self.oven = Heater(HEATER_PIN, HEATER_ACTIVE_LOW)
+
         self.temp_cali_scr = lv.obj()
         self.page = lv.page(self.temp_cali_scr)
         self.page.set_size(self.temp_cali_scr.get_width(), self.temp_cali_scr.get_height())
