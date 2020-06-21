@@ -142,13 +142,12 @@ else:
         while True:
             try:
                 temp_sensor.read_temp()
-            except Exception:
-                print('Error occured when measuring temperature.')
+            except Exception as e:
+                print('ERROR:', str(e))
             if utime.ticks_diff(utime.ticks_ms(), TEMP_GUI_LAST_UPDATE) >= 1000:
                 gui.temp_update(temp_sensor.get_temp())
                 TEMP_GUI_LAST_UPDATE = utime.ticks_ms()
             utime.sleep_ms(int(1000/SAMPLING_HZ))
-
 
     def buzzer_activate():
         while True:
