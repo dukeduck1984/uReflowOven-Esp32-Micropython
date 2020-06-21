@@ -12,9 +12,13 @@ class GUI:
     CHART_HEIGHT = 120
     CHART_TOP_PADDING = 10
 
-    def __init__(self, profiles_obj, config_dict):
+    def __init__(self, profiles_obj, config_dict, pid_obj, sensor_obj):
         self.profiles = profiles_obj
         self.config = config_dict
+        self.pid = pid_obj
+        self.sensor = sensor_obj
+        self.pid_params = self.config.get('pid')
+        self.temp_offset = self.config.get('temp_offset')
         self.alloy_list = self.profiles.get_profile_alloy_names()
         self.has_started = False
         self.main_scr = lv.obj()
@@ -25,7 +29,7 @@ class GUI:
         self.profile_alloy_selector = self.profile_selector_init()
         self.start_btn, self.start_label = self.start_btn_init()
         self.stage_cont, self.stage_label = self.stage_init()
-        self.cali_btn = self.cali_btn_init()
+        self.settings_btn = self.settings_btn_init()
         self.temp_text = self.temp_init()
         self.led = self.led_init()
         self.line = None
@@ -33,9 +37,10 @@ class GUI:
         self.null_chart_point_list = None
         self.profile_detail_init()
         self.profile_alloy_selector.move_foreground()
-        self.show_cali_btn_hide_stage()
+        self.show_set_btn_hide_stage()
         self.reflow_process_start_cb = None
         self.reflow_process_stop_cb = None
+        self.current_input_placeholder = 'Set Kp'
         lv.scr_load(self.main_scr)
 
     def profile_detail_init(self):
@@ -108,7 +113,7 @@ class GUI:
 
     def draw_profile_line(self, points):
         """
-        Draw ideal reflow temp profile over the chart per selection
+        Draw reflow temp profile over the chart per selection
         """
         style_line = lv.style_t()
         lv.style_copy(style_line, lv.style_transp)
@@ -142,7 +147,7 @@ class GUI:
         dash_width = int(GUI.CHART_WIDTH / (dashed_segments * 2 - 1))
         dashed_points = [
             {'x': 0, 'y': 0},
-            {'x': dash_width,'y':0}
+            {'x': dash_width, 'y': 0}
         ]
         dashed_line0 = lv.line(dashed_cont)
         dashed_line0.set_points(dashed_points, len(dashed_points))
@@ -282,7 +287,6 @@ class GUI:
             self.profile_alloy_selector.set_style(lv.ddlist.STYLE.SEL, lv.style_pretty_color)
             self.profile_alloy_selector.set_click(True)
 
-
     def save_default_alloy(self):
         alloy_name = self.alloy_list[self.profile_alloy_selector.get_selected()]
         # with open('config.json', 'r') as f:
@@ -368,7 +372,7 @@ class GUI:
         popup_stop.set_event_cb(event_handler)
         popup_stop.align(None, lv.ALIGN.CENTER, 0, 0)
 
-    def popup_calibration(self):
+    def popup_settings(self):
         modal_style = lv.style_t()
         lv.style_copy(modal_style, lv.style_plain_color)
         modal_style.body.main_color = modal_style.body.grad_color = lv.color_make(0, 0, 0)
@@ -379,44 +383,201 @@ class GUI:
         bg.set_size(self.main_scr.get_width(), self.main_scr.get_height())
         bg.set_opa_scale_enable(True)
 
-        popup_cali = lv.mbox(bg)
-        popup_cali.set_text('What would you like to calibrate?')
-        btns = ['Temp Sensor', '\n', 'Touch Screen', '\n', 'Cancel', '']
-        popup_cali.add_btns(btns)
+        popup_settings = lv.mbox(bg)
+        popup_settings.set_text('Settings')
+        btns = ['Set PID Params', '\n', 'Calibrate Touch', '\n', 'Close', '']
+        popup_settings.add_btns(btns)
 
-        lv.cont.set_fit(popup_cali, lv.FIT.NONE)
-        mbox_style = popup_cali.get_style(popup_cali.STYLE.BTN_REL)
+        lv.cont.set_fit(popup_settings, lv.FIT.NONE)
+        mbox_style = popup_settings.get_style(popup_settings.STYLE.BTN_REL)
         popup_cali_style = lv.style_t()
         lv.style_copy(popup_cali_style, mbox_style)
-        popup_cali_style.body.padding.bottom = 96
-        popup_cali.set_style(popup_cali.STYLE.BTN_REL, popup_cali_style)
-
-        popup_cali.set_height(186)
-
-        this = self
+        popup_cali_style.body.padding.bottom = 115
+        popup_settings.set_style(popup_settings.STYLE.BTN_REL, popup_cali_style)
+        popup_settings.set_height(186)
 
         def event_handler(obj, event):
             if event == lv.EVENT.VALUE_CHANGED:
-                active_btn_text = popup_cali.get_active_btn_text()
+                active_btn_text = popup_settings.get_active_btn_text()
                 tim = machine.Timer(-1)
-                if active_btn_text == 'Temp Sensor':
-                    this.config['has_calibrated'] = False
-                    with open('config.json', 'w') as f:
-                        ujson.dump(this.config, f)
-                    tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t:machine.reset())
-                elif active_btn_text == 'Touch Screen':
-                    uos.remove(this.config.get('touch_cali_file'))
-                    tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t:machine.reset())
+                # Note: With PID, temp calibration no longer needed
+                # if active_btn_text == 'Temp Sensor':
+                #     this.config['has_calibrated'] = False
+                #     with open('config.json', 'w') as f:
+                #         ujson.dump(this.config, f)
+                #     tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t:machine.reset())
+                # elif active_btn_text == 'Touch Screen':
+                if active_btn_text == 'Calibrate Touch':
+                    uos.remove(self.config.get('touch_cali_file'))
+                    tim.init(period=500, mode=machine.Timer.ONE_SHOT, callback=lambda t: machine.reset())
+                elif active_btn_text == 'Set PID Params':
+                    tim.init(period=50, mode=machine.Timer.ONE_SHOT, callback=lambda t: self.popup_pid_params())
                 else:
                     tim.deinit()
-
                 bg.del_async()
-                popup_cali.start_auto_close(5)
+                popup_settings.start_auto_close(5)
 
-        popup_cali.set_event_cb(event_handler)
-        popup_cali.align(None, lv.ALIGN.CENTER, 0, 0)
-        self.popup_cali = popup_cali
-        return self.popup_cali
+        popup_settings.set_event_cb(event_handler)
+        popup_settings.align(None, lv.ALIGN.CENTER, 0, 0)
+
+    def popup_pid_params(self):
+        """
+        The popup window of PID params settings
+        """
+        modal_style = lv.style_t()
+        lv.style_copy(modal_style, lv.style_plain_color)
+        modal_style.body.main_color = modal_style.body.grad_color = lv.color_make(0, 0, 0)
+        modal_style.body.opa = lv.OPA._50
+        bg = lv.obj(self.main_scr)
+        bg.set_style(modal_style)
+        bg.set_pos(0, 0)
+        bg.set_size(self.main_scr.get_width(), self.main_scr.get_height())
+        bg.set_opa_scale_enable(True)
+
+        # init mbox and title
+        popup_pid = lv.mbox(bg)
+        popup_pid.set_text('Set PID Params')
+        popup_pid.set_size(220, 300)
+        popup_pid.align(bg, lv.ALIGN.CENTER, 0, 0)
+
+        input_cont = lv.cont(popup_pid)
+        input_cont.set_size(210, 180)
+
+        def input_event_cb(ta, event):
+            if event == lv.EVENT.CLICKED:
+                self.current_input_placeholder = ta.get_placeholder_text()
+                if self.current_input_placeholder == 'Set Offset':
+                    popup_pid.align(bg, lv.ALIGN.CENTER, 0, -55)
+                else:
+                    popup_pid.align(bg, lv.ALIGN.CENTER, 0, 0)
+                if kb.get_hidden():
+                    kb.set_hidden(False)
+                # Focus on the clicked text area
+                kb.set_ta(ta)
+
+        def keyboard_event_cb(event_kb, event):
+            event_kb.def_event_cb(event)
+            if event == lv.EVENT.CANCEL or event == lv.EVENT.APPLY:
+                kb.set_hidden(True)
+                if self.current_input_placeholder == 'Set Offset':
+                    popup_pid.align(bg, lv.ALIGN.CENTER, 0, 0)
+
+        # init keyboard
+        kb = lv.kb(bg)
+        kb.set_cursor_manage(True)
+        kb.set_event_cb(keyboard_event_cb)
+        lv.kb.set_mode(kb, lv.kb.MODE.NUM)
+        rel_style = lv.style_t()
+        pr_style = lv.style_t()
+        lv.style_copy(rel_style, lv.style_btn_rel)
+        rel_style.body.radius = 0
+        rel_style.body.border.width = 1
+        lv.style_copy(pr_style, lv.style_btn_pr)
+        pr_style.body.radius = 0
+        pr_style.body.border.width = 1
+        kb.set_style(lv.kb.STYLE.BG, lv.style_transp_tight)
+        kb.set_style(lv.kb.STYLE.BTN_REL, rel_style)
+        kb.set_style(lv.kb.STYLE.BTN_PR, pr_style)
+
+        # init text areas
+        kp_input = lv.ta(input_cont)
+        kp_input.set_text(str(self.pid_params.get('kp')))
+        kp_input.set_placeholder_text('Set Kp')
+        kp_input.set_accepted_chars('0123456789.+-')
+        kp_input.set_one_line(True)
+        kp_input.set_width(120)
+        kp_input.align(input_cont, lv.ALIGN.IN_TOP_MID, 30, 20)
+        kp_input.set_event_cb(input_event_cb)
+        kp_label = lv.label(input_cont)
+        kp_label.set_text("Kp: ")
+        kp_label.align(kp_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+        pid_title_label = lv.label(input_cont)
+        pid_title_label.set_text("PID Params:")
+        pid_title_label.align(kp_input, lv.ALIGN.OUT_TOP_LEFT, -65, 0)
+
+        ki_input = lv.ta(input_cont)
+        ki_input.set_text(str(self.pid_params.get('ki')))
+        ki_input.set_placeholder_text('Set Ki')
+        ki_input.set_accepted_chars('0123456789.+-')
+        ki_input.set_one_line(True)
+        ki_input.set_width(120)
+        ki_input.align(input_cont, lv.ALIGN.IN_TOP_MID, 30, 55)
+        ki_input.set_event_cb(input_event_cb)
+        ki_input.set_cursor_type(lv.CURSOR.LINE | lv.CURSOR.HIDDEN)
+        ki_label = lv.label(input_cont)
+        ki_label.set_text("Ki: ")
+        ki_label.align(ki_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+
+        kd_input = lv.ta(input_cont)
+        kd_input.set_text(str(self.pid_params.get('kd')))
+        kd_input.set_placeholder_text('Set Kd')
+        kd_input.set_accepted_chars('0123456789.+-')
+        kd_input.set_one_line(True)
+        kd_input.set_width(120)
+        kd_input.align(input_cont, lv.ALIGN.IN_TOP_MID, 30, 90)
+        kd_input.set_event_cb(input_event_cb)
+        kd_input.set_cursor_type(lv.CURSOR.LINE | lv.CURSOR.HIDDEN)
+        kd_label = lv.label(input_cont)
+        kd_label.set_text("Kd: ")
+        kd_label.align(kd_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+
+        temp_offset_input = lv.ta(input_cont)
+        temp_offset_input.set_text(str(self.temp_offset))
+        temp_offset_input.set_placeholder_text('Set Offset')
+        temp_offset_input.set_accepted_chars('0123456789.+-')
+        temp_offset_input.set_one_line(True)
+        temp_offset_input.set_width(120)
+        temp_offset_input.align(input_cont, lv.ALIGN.IN_TOP_MID, 30, 145)
+        temp_offset_input.set_event_cb(input_event_cb)
+        temp_offset_input.set_cursor_type(lv.CURSOR.LINE | lv.CURSOR.HIDDEN)
+        temp_offset_label = lv.label(input_cont)
+        temp_offset_label.set_text("Offset: ")
+        temp_offset_label.align(temp_offset_input, lv.ALIGN.OUT_LEFT_MID, 0, 0)
+        offset_title_label = lv.label(input_cont)
+        offset_title_label.set_text("Temp Correction:")
+        offset_title_label.align(temp_offset_input, lv.ALIGN.OUT_TOP_LEFT, -65, 0)
+
+        # set btns to mbox
+        btns = ['Save', 'Cancel', '']
+        popup_pid.add_btns(btns)
+
+        lv.cont.set_fit(popup_pid, lv.FIT.NONE)
+        mbox_style = popup_pid.get_style(popup_pid.STYLE.BTN_REL)
+        popup_pid_style = lv.style_t()
+        lv.style_copy(popup_pid_style, mbox_style)
+        popup_pid_style.body.padding.bottom = 46
+        popup_pid.set_style(popup_pid.STYLE.BTN_REL, popup_pid_style)
+        popup_pid.set_size(220, 300)
+
+        def event_handler(obj, event):
+            if event == lv.EVENT.VALUE_CHANGED:
+                active_btn_text = popup_pid.get_active_btn_text()
+                if active_btn_text == 'Save':
+                    kp_value = float(kp_input.get_text())
+                    ki_value = float(ki_input.get_text())
+                    kd_value = float(kd_input.get_text())
+                    temp_offset_value = float(temp_offset_input.get_text())
+                    self.config['pid'] = {
+                        'kp': kp_value,
+                        'ki': ki_value,
+                        'kd': kd_value
+                    }
+                    self.config['temp_offset'] = temp_offset_value
+                    self.pid_params = self.config.get('pid')
+                    self.temp_offset = self.config.get('temp_offset')
+                    # Save settings to config.json
+                    with open('config.json', 'w') as f:
+                        ujson.dump(self.config, f)
+                    # Apply settings immediately
+                    self.pid.reset(kp_value, ki_value, kd_value)
+                    self.sensor.set_offset(temp_offset_value)
+                bg.del_async()
+                popup_pid.start_auto_close(5)
+
+        popup_pid.set_event_cb(event_handler)
+        popup_pid.align(bg, lv.ALIGN.CENTER, 0, 0)
+        kb.set_ta(kp_input)
+        kb.set_hidden(True)
 
     def start_btn_init(self):
         """
@@ -458,22 +619,20 @@ class GUI:
         """
         self.start_label.set_text(lv.SYMBOL.PLAY + ' Start')
 
-    def cali_btn_init(self):
+    def settings_btn_init(self):
         # Cali Button
-        this = self
-
-        def cali_btn_handler(obj, event):
+        def settings_btn_handler(obj, event):
             if event == lv.EVENT.CLICKED:
                 # let user choose what to calibrate: touch screen or temp
-                this.popup_calibration()
+                self.popup_settings()
 
-        cali_btn = lv.btn(self.main_scr)
-        cali_btn.set_size(140, 38)
-        cali_btn.align(self.start_btn, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 5)
-        cali_btn.set_event_cb(cali_btn_handler)
-        cali_label = lv.label(cali_btn)
-        cali_label.set_text(lv.SYMBOL.SETTINGS + ' Calibration')
-        return cali_btn
+        settings_btn = lv.btn(self.main_scr)
+        settings_btn.set_size(140, 38)
+        settings_btn.align(self.start_btn, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 5)
+        settings_btn.set_event_cb(settings_btn_handler)
+        cali_label = lv.label(settings_btn)
+        cali_label.set_text(lv.SYMBOL.SETTINGS + ' Settings')
+        return settings_btn
 
     def stage_init(self):
         # Stage Container
@@ -502,19 +661,19 @@ class GUI:
         """
         self.stage_label.set_text(text)
 
-    def show_stage_hide_cali_btn(self):
+    def show_stage_hide_set_btn(self):
         """
         Hide the calibration button to show the stage info.
         """
         self.stage_cont.set_hidden(False)
-        self.cali_btn.set_hidden(True)
+        self.settings_btn.set_hidden(True)
 
-    def show_cali_btn_hide_stage(self):
+    def show_set_btn_hide_stage(self):
         """
         Hide the stage info to show the calibration button
         """
         self.stage_cont.set_hidden(True)
-        self.cali_btn.set_hidden(False)
+        self.settings_btn.set_hidden(False)
 
     def add_reflow_process_start_cb(self, start_cb):
         self.reflow_process_start_cb = start_cb
@@ -528,7 +687,7 @@ class GUI:
             self.set_start_btn_to_stop()
             # disable the alloy selector
             self.disable_alloy_selector(is_on)
-            self.show_stage_hide_cali_btn()
+            self.show_stage_hide_set_btn()
             # clear temp chart data
             self.chart_clear()
             # save selected alloy to config.json as default_alloy
@@ -540,6 +699,6 @@ class GUI:
             self.has_started = is_off
             self.reset_start_btn()
             self.disable_alloy_selector(is_off)
-            self.show_cali_btn_hide_stage()
+            self.show_set_btn_hide_stage()
             if self.reflow_process_stop_cb:
                 self.reflow_process_stop_cb()

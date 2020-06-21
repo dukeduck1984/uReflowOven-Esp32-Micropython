@@ -1,4 +1,5 @@
 import machine
+import network
 import ujson
 import uos
 
@@ -15,7 +16,9 @@ with open('config.json', 'r') as f:
     config = ujson.load(f)
 
 TOUCH_CALI_FILE = config.get('touch_cali_file')
-TEMP_HAS_CALIBRATED = config.get('has_calibrated')
+
+# By using PID, temp calibration no longer needed
+# TEMP_HAS_CALIBRATED = config.get('has_calibrated')
 
 tft_setup = config.get('tft_pins')
 TFT_MISO = tft_setup.get('miso')
@@ -36,6 +39,13 @@ TEMP_CS = max31855_setup.get('cs')
 TEMP_SCK = max31855_setup.get('sck')
 TEMP_MISO = max31855_setup.get('miso')
 TEMP_OFFSET = config.get('temp_offset')
+
+SAMPLING_HZ = config.get('sampling_hz')
+
+pid_setup = config.get('pid')
+KP = pid_setup.get('kp')
+KI = pid_setup.get('ki')
+KD = pid_setup.get('kd')
 
 heater_setup = config.get('heater_pins')
 HEATER_PIN = heater_setup.get('heater')
@@ -76,11 +86,12 @@ if TOUCH_CALI_FILE not in uos.listdir():
     touch_cali = TouchCali(touch, config)
     touch_cali.start()
 
-elif not TEMP_HAS_CALIBRATED:
-    from temp_cali import TempCali
-
-    temp_cali = TempCali(config)
-    temp_cali.start()
+# By using PID, temp calibration no longer needed
+# elif not TEMP_HAS_CALIBRATED:
+#     from temp_cali import TempCali
+#
+#     temp_cali = TempCali(config)
+#     temp_cali.start()
 
 else:
     with open(TOUCH_CALI_FILE, 'r') as f:
@@ -108,10 +119,9 @@ else:
     from load_profiles import LoadProfiles
     from max31855 import MAX31855
     from oven_control import OvenControl
+    from pid import PID
 
     reflow_profiles = LoadProfiles(DEFAULT_ALLOY)
-
-    gui = GUI(reflow_profiles, config)
 
     temp_sensor = MAX31855(hwspi=TEMP_HWSPI,
                            cs=TEMP_CS,
@@ -125,14 +135,19 @@ else:
 
     timer = machine.Timer(0)
 
+    TEMP_GUI_LAST_UPDATE = utime.ticks_ms()
+
     def measure_temp():
+        global TEMP_GUI_LAST_UPDATE
         while True:
             try:
                 temp_sensor.read_temp()
             except Exception:
                 print('Error occurs when measuring temperature.')
-            gui.temp_update(temp_sensor.get_temp())
-            utime.sleep_ms(500)
+            if utime.ticks_diff(utime.ticks_ms(), TEMP_GUI_LAST_UPDATE) >= 1000:
+                gui.temp_update(temp_sensor.get_temp())
+                TEMP_GUI_LAST_UPDATE = utime.ticks_ms()
+            utime.sleep_ms(int(1000/SAMPLING_HZ))
 
 
     def buzzer_activate():
@@ -148,4 +163,17 @@ else:
     temp_th = _thread.start_new_thread(measure_temp, ())
     buzzer_th = _thread.start_new_thread(buzzer_activate, ())
 
-    oven_control = OvenControl(oven, temp_sensor, reflow_profiles, gui, buzzer, timer, config)
+    pid = PID(KP, KI, KD)
+
+    gui = GUI(reflow_profiles, config, pid, temp_sensor)
+
+    oven_control = OvenControl(oven, temp_sensor, pid, reflow_profiles, gui, buzzer, timer, config)
+
+# Starting FTP service for future updates
+ap = network.WLAN(network.AP_IF)
+ap.config(essid='uReflow Oven ftp://192.168.4.1')
+ap.active(True)
+while not ap.active():
+    utime.sleep_ms(500)
+else:
+    import uftpd

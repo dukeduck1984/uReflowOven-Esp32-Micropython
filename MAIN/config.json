@@ -1,9 +1,6 @@
 {
     "touch_cali_file": "touch_cali.json",
     "default_alloy": "Sn63/Pb37",
-    "has_calibrated": true,
-    "calibrate_temp": 29.5625,
-    "calibrate_seconds": 37,
     "heater_pins": {
         "heater": 21,
         "heater_active_low": false
@@ -32,5 +29,16 @@
         "miso": 33,
         "sck": 32
     },
-    "temp_offset": 0.0
+    "sampling_hz": 5,
+    "temp_offset": 0.0,
+    "pid": {
+        "kp": 1.0,
+        "ki": 0.001,
+        "kd": 10.0
+    },
+    "advanced_temp_tuning": {
+        "preheat_until": 40,
+        "provisioning": 5,
+        "overshoot_comp": 10
+    }
 }
