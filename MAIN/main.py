@@ -143,7 +143,7 @@ else:
             try:
                 temp_sensor.read_temp()
             except Exception:
-                print('Error occurs when measuring temperature.')
+                print('Error occured when measuring temperature.')
             if utime.ticks_diff(utime.ticks_ms(), TEMP_GUI_LAST_UPDATE) >= 1000:
                 gui.temp_update(temp_sensor.get_temp())
                 TEMP_GUI_LAST_UPDATE = utime.ticks_ms()
