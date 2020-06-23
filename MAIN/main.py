@@ -2,13 +2,11 @@ import machine
 import network
 import ujson
 import uos
-
 import lvgl as lv
 import lvesp32
 
 from ili9341 import ili9341
 from xpt2046 import xpt2046
-
 
 machine.freq(240000000)
 
@@ -16,9 +14,6 @@ with open('config.json', 'r') as f:
     config = ujson.load(f)
 
 TOUCH_CALI_FILE = config.get('touch_cali_file')
-
-# By using PID, temp calibration no longer needed
-# TEMP_HAS_CALIBRATED = config.get('has_calibrated')
 
 disp = ili9341(
     miso = config['tft_pins']['miso'],
@@ -49,13 +44,6 @@ if TOUCH_CALI_FILE not in uos.listdir():
     from touch_cali import TouchCali
     touch_cali = TouchCali(touch, config)
     touch_cali.start()
-
-# By using PID, temp calibration no longer needed
-# elif not TEMP_HAS_CALIBRATED:
-#     from temp_cali import TempCali
-#
-#     temp_cali = TempCali(config)
-#     temp_cali.start()
 
 else:
     with open(TOUCH_CALI_FILE, 'r') as f:
@@ -119,9 +107,6 @@ else:
             if buzzer.song:
                 buzzer.play_song(buzzer.song)
                 gc.collect()
-            else:
-                pass
-
 
     _thread.stack_size(7 * 1024)
     temp_th = _thread.start_new_thread(measure_temp, ())
