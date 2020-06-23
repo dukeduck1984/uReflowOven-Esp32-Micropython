@@ -10,10 +10,7 @@ from xpt2046 import xpt2046
 
 machine.freq(240000000)
 
-with open('config.json', 'r') as f:
-    config = ujson.load(f)
-
-TOUCH_CALI_FILE = config.get('touch_cali_file')
+config = ujson.load(open('config.json', 'r'))
 
 disp = ili9341(
     miso = config['tft_pins']['miso'],
@@ -31,37 +28,19 @@ disp = ili9341(
     rot = ili9341.PORTRAIT if config['tft_pins']['is_portrait'] else ili9341.LANDSCAPE
 )
 
-touch_setup = config.get('touch_pins')
-TOUCH_CS = touch_setup.get('cs')
-TOUCH_INTERRUPT = touch_setup.get('interrupt')
+touch_args = {}
+if config.get('touch_cali_file') in uos.listdir():
+    touch_args = ujson.load(open(config.get('touch_cali_file'), 'r'))
+touch_args['cs'] = config['touch_pins']['cs']
+touch_args['transpose'] = config['tft_pins']['is_portrait']
+touch = xpt2046(**touch_args)
 
-if TOUCH_CALI_FILE not in uos.listdir():
-    touch = xpt2046(
-        cs=TOUCH_CS,
-        transpose=TFT_IS_PORTRAIT,
-    )
-
+if config.get('touch_cali_file') not in uos.listdir():
     from touch_cali import TouchCali
     touch_cali = TouchCali(touch, config)
     touch_cali.start()
 
 else:
-    with open(TOUCH_CALI_FILE, 'r') as f:
-        param = ujson.load(f)
-        touch_x0 = param['cal_x0']
-        touch_x1 = param['cal_x1']
-        touch_y0 = param['cal_y0']
-        touch_y1 = param['cal_y1']
-
-    touch = xpt2046(
-        cs=TOUCH_CS,
-        transpose=TFT_IS_PORTRAIT,
-        cal_x0=touch_x0,
-        cal_x1=touch_x1,
-        cal_y0=touch_y0,
-        cal_y1=touch_y1,
-    )
-
     import gc
     import utime
     import _thread
