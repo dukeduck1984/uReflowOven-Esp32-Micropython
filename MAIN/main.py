@@ -72,9 +72,9 @@ else:
             try:
                 t = temp_sensor.get_temp()
             except Exception as e:
-                print('ERROR:', str(e))
-                t = 0
+                t = str(e)
             gui.temp_update(t)
+            utime.sleep_ms(int(1000/config['display_refresh_hz']))
 
     def buzzer_activate():
         while True:

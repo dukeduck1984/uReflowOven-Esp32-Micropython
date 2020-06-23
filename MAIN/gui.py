@@ -340,7 +340,12 @@ class GUI:
         Update the actual real-time temp
         Should be called externally
         """
-        self.temp_text.set_text('{:.1f}'.format(temp))
+        try:
+            float(temp)
+            temp = '{:.1f}'.format(temp)
+        except ValueError: pass
+        finally:
+            self.temp_text.set_text(temp)
 
     def popup_confirm_stop(self):
         modal_style = lv.style_t()

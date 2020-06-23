@@ -50,13 +50,13 @@ class MAX31855:
             self._cs.value(1)
 
         if self._data[3] & 0x01:
-            raise RuntimeError("thermocouple not connected")
+            raise RuntimeError("NC") # not connected
         if self._data[3] & 0x02:
-            raise RuntimeError("short circuit to ground")
+            raise RuntimeError("X_GND") # shortcut to GND
         if self._data[3] & 0x04:
-            raise RuntimeError("short circuit to power")
+            raise RuntimeError("X_PWR") # shortcut to power
         if self._data[1] & 0x01:
-            raise RuntimeError("faulty reading")
+            raise RuntimeError("ERR") # faulty reading
 
         temp, refer = ustruct.unpack('>hh', self._data)
         refer >>= 4
