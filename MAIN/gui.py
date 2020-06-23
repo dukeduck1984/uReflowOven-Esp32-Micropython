@@ -210,7 +210,7 @@ class GUI:
         style_title.text.font = lv.font_roboto_28
         title_label = lv.label(self.main_scr)
         title_label.set_style(lv.label.STYLE.MAIN, style_title)
-        title_label.set_text('uReflow Oven')
+        title_label.set_text(self.config.get('title'))
         title_label.align(lv.scr_act(), lv.ALIGN.IN_TOP_LEFT, 8, 3)
         return title_label
 
