@@ -1,9 +1,10 @@
 import ustruct
+import utime
 from machine import Pin, SPI
 
 
 class MAX31855:
-    def __init__(self, hwspi=2, cs=None, sck=None, miso=None, offset=0.0):
+    def __init__(self, hwspi=2, cs=None, sck=None, miso=None, offset=0.0, cache_time=0):
         """
         :param hwspi: Hardware SPI bus id
             HSPI(id=1): sck=14, mosi=13, miso=12
@@ -24,7 +25,9 @@ class MAX31855:
         self._offset = offset
         self._cs = Pin(cs, Pin.OUT)
         self._data = bytearray(4)
-        self.last_read = None
+        self.cache_time = cache_time
+        self.last_read = 0
+        self.last_read_time = 0
 
         if hwspi == 1 or hwspi == 2:
             # Hardware SPI Bus
@@ -58,11 +61,11 @@ class MAX31855:
         temp, refer = ustruct.unpack('>hh', self._data)
         refer >>= 4
         temp >>= 2
+        self.last_read_time = utime.ticks_ms()
         self.last_read = refer * 0.0625 + self._offset if internal else temp * 0.25 + self._offset
         return self.last_read
 
     def get_temp(self):
-        if self.last_read:
+        if utime.ticks_diff(utime.ticks_ms(), self.last_read_time) < self.cache_time:
             return self.last_read
-        else:
-            return self.read_temp()
+        return self.read_temp()

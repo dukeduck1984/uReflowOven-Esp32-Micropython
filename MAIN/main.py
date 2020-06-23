@@ -58,27 +58,23 @@ else:
         cs = config['max31855_pins']['cs'],
         miso = config['max31855_pins']['miso'],
         sck = config['max31855_pins']['sck'],
-        offset = config['temp_offset'])
+        offset = config['temp_offset'],
+        cache_time = int(1000/config['sampling_hz'])
+    )
 
     oven = Heater(config['heater_pins']['heater'], config['heater_pins']['heater_active_low'])
 
     buzzer = Buzzer(config['buzzer_pin'])
 
-    timer = machine.Timer(0)
-
-    TEMP_GUI_LAST_UPDATE = utime.ticks_ms()
-
     def measure_temp():
         global TEMP_GUI_LAST_UPDATE
         while True:
             try:
-                temp_sensor.read_temp()
+                t = temp_sensor.get_temp()
             except Exception as e:
                 print('ERROR:', str(e))
-            if utime.ticks_diff(utime.ticks_ms(), TEMP_GUI_LAST_UPDATE) >= 1000:
-                gui.temp_update(temp_sensor.get_temp())
-                TEMP_GUI_LAST_UPDATE = utime.ticks_ms()
-            utime.sleep_ms(int(1000/config['sampling_hz']))
+                t = 0
+            gui.temp_update(t)
 
     def buzzer_activate():
         while True:
@@ -94,7 +90,7 @@ else:
 
     gui = GUI(reflow_profiles, config, pid, temp_sensor)
 
-    oven_control = OvenControl(oven, temp_sensor, pid, reflow_profiles, gui, buzzer, timer, config)
+    oven_control = OvenControl(oven, temp_sensor, pid, reflow_profiles, gui, buzzer, machine.Timer(0), config)
 
 # Starting FTP service for future updates
 if config['ftp']['enable']:
