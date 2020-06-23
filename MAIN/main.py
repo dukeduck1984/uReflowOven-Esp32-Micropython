@@ -120,10 +120,11 @@ else:
     oven_control = OvenControl(heater, temp_sensor, pid, reflow_profiles, gui, buzzer, timer, config)
 
 # Starting FTP service for future updates
-ap = network.WLAN(network.AP_IF)
-ap.config(essid='uReflowOven ftp://192.168.4.1')
-ap.active(True)
-while not ap.active():
-    utime.sleep_ms(500)
-else:
-    import uftpd
+if config['ftp']['enable']:
+    ap = network.WLAN(network.AP_IF)
+    ap.config(essid='uReflow Oven ftp://192.168.4.1')
+    ap.active(True)
+    while not ap.active():
+        utime.sleep_ms(500)
+    else:
+        import uftpd

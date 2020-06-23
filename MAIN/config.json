@@ -40,5 +40,8 @@
         "preheat_until": 75,
         "previsioning": 0,
         "overshoot_comp": 0
+    },
+    "ftp": {
+        "enable": false
     }
 }
