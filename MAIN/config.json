@@ -1,6 +1,7 @@
 {
     "touch_cali_file": "touch_cali.json",
     "default_alloy": "Sn63/Pb37",
+    "title": "uReflow Oven",
     "heater_pins": {
         "heater": 21,
         "heater_low_active": false
