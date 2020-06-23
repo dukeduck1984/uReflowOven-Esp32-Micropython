@@ -64,7 +64,16 @@ class OvenControl:
         try:
             return self.sensor.get_temp()
         except Exception as e:
-            pass
+            print('Emergency off')
+            self.oven.off()
+            self.ontime = 0
+            self.offtime = 0
+            self.reflow_start = 0
+            self.offtemp = 0
+            self.has_started = False
+            self.gui.led_turn_off()
+            return 0
+
     def oven_enable(self, enable):
         # self.control = enable
         if enable:
