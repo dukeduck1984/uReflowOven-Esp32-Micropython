@@ -1,5 +1,4 @@
 import machine
-import network
 import ujson
 import uos
 import lvgl as lv
@@ -99,8 +98,9 @@ else:
 
 # Starting FTP service for future updates
 if config['ftp']['enable']:
+    import network
     ap = network.WLAN(network.AP_IF)
-    ap.config(essid='uReflow Oven ftp://192.168.4.1')
+    ap.config(essid=config['ftp']['ssid'])
     ap.active(True)
     while not ap.active():
         utime.sleep_ms(500)

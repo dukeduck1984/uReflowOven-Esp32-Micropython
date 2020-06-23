@@ -42,6 +42,7 @@
         "overshoot_comp": 10
     },
     "ftp": {
-        "enable": false
+        "enable": false,
+        "ssid": "Reflower ftp://192.168.4.1"
     }
 }
