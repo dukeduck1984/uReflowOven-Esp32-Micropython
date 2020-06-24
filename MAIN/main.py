@@ -47,18 +47,22 @@ else:
     from heater import Heater
     from gui import GUI
     from load_profiles import LoadProfiles
-    from max31855 import MAX31855
     from oven_control import OvenControl
     from pid import PID
 
+    if config.get('sensor_type') == 'MAX6675':
+        from max6675 import MAX6675 as Sensor
+    else:
+        from max31855 import MAX31855 as Sensor
+
     reflow_profiles = LoadProfiles(config['default_alloy'])
 
-    temp_sensor = MAX31855(
-        hwspi = config['max31855_pins']['hwspi'],
-        cs = config['max31855_pins']['cs'],
-        miso = config['max31855_pins']['miso'],
-        sck = config['max31855_pins']['sck'],
-        offset = config['temp_offset'],
+    temp_sensor = Sensor(
+        hwspi = config['sensor_pins']['hwspi'],
+        cs = config['sensor_pins']['cs'],
+        miso = config['sensor_pins']['miso'],
+        sck = config['sensor_pins']['sck'],
+        offset = config['sensor_offset'],
         cache_time = int(1000/config['sampling_hz'])
     )
 
