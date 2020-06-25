@@ -48,6 +48,7 @@ KI = pid_setup.get('ki')
 KD = pid_setup.get('kd')
 
 OVEN_PIN = config.get('oven_pin')
+OVEN_IS_LOW_ACTIVE = config.get('oven_is_low_active')
 
 BUZZER_PIN = config.get('buzzer_pin')
 
@@ -126,9 +127,14 @@ else:
                            sck=TEMP_SCK,
                            offset=TEMP_OFFSET)
 
-    oven = machine.Pin(OVEN_PIN, machine.Pin.OUT, value=0)
+    oven = machine.Signal(machine.Pin(OVEN_PIN, machine.Pin.OUT), invert=OVEN_IS_LOW_ACTIVE)
+    oven.off()
 
     buzzer = Buzzer(BUZZER_PIN)
+
+    pid = PID(KP, KI, KD)
+
+    gui = GUI(reflow_profiles, config, pid, temp_sensor)
 
     timer = machine.Timer(0)
 
@@ -160,15 +166,11 @@ else:
     temp_th = _thread.start_new_thread(measure_temp, ())
     buzzer_th = _thread.start_new_thread(buzzer_activate, ())
 
-    pid = PID(KP, KI, KD)
-
-    gui = GUI(reflow_profiles, config, pid, temp_sensor)
-
     oven_control = OvenControl(oven, temp_sensor, pid, reflow_profiles, gui, buzzer, timer, config)
 
 # Starting FTP service for future updates
 ap = network.WLAN(network.AP_IF)
-ap.config(essid='uReflow Oven ftp://192.168.4.1')
+ap.config(essid='uReflowOven ftp://192.168.4.1')
 ap.active(True)
 while not ap.active():
     utime.sleep_ms(500)
