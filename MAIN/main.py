@@ -47,7 +47,9 @@ KP = pid_setup.get('kp')
 KI = pid_setup.get('ki')
 KD = pid_setup.get('kd')
 
-OVEN_PIN = config.get('oven_pin')
+heater_setup = config.get('heater_pins')
+HEATER_PIN = heater_setup.get('heater')
+HEATER_ACTIVE_LOW = heater_setup.get('heater_active_low')
 
 BUZZER_PIN = config.get('buzzer_pin')
 
@@ -112,6 +114,7 @@ else:
     import utime
     import _thread
     from buzzer import Buzzer
+    from heater import Heater
     from gui import GUI
     from load_profiles import LoadProfiles
     from max31855 import MAX31855
@@ -126,7 +129,7 @@ else:
                            sck=TEMP_SCK,
                            offset=TEMP_OFFSET)
 
-    oven = machine.Pin(OVEN_PIN, machine.Pin.OUT, value=0)
+    oven = Heater(HEATER_PIN, HEATER_ACTIVE_LOW)
 
     buzzer = Buzzer(BUZZER_PIN)
 

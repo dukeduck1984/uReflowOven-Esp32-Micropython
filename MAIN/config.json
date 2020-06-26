@@ -1,7 +1,10 @@
 {
     "touch_cali_file": "touch_cali.json",
     "default_alloy": "Sn63/Pb37",
-    "oven_pin": 21,
+    "heater_pins": {
+        "heater": 21,
+        "heater_active_low": false
+    },
     "tft_pins": {
         "miso": 5,
         "mosi": 18,
