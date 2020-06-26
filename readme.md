@@ -54,7 +54,7 @@ means 5HZ which is 5 times per second.
 * ```advanced_temp_tuning``` can only be changed by editing the ```config.json```.
     * ```preheat_until``` (temperature in Celsius) is used to set a temperature below which the oven will always be on - it helps to 
     heat up the oven as quickly as possible at the early stage.
-    * ```provisioning```  (time in Second) is for the PID to look for the set temp X seconds ahead, as the reflow
+    * ```previsioning```  (time in Second) is for the PID to look for the set temp X seconds ahead, as the reflow
     temperature profile is not constant but a changing curve, this parameter will make the PID more reactive.
     * ```overshoot_comp``` (temperature in Celsius) it helps reduce the overshoot.
     
