@@ -44,6 +44,7 @@ on and off via the solid state relay.
 * Hardware wiring: edit the value of the key names ending with '_pins' to match your actual wiring.
 * The TFT screen and the touch controller share the same ```Clock```, ```Data In``` & ```Data Out``` pins.
 * The ACC pin of the TFT screen is for powering on the display.
+* ```oven_is_low_active``` set this according to how you activate your heating element.
 * ```sampling_hz``` determines the update rate of the temp sensor and the PID controller.  The default setting ```5``` 
 means 5HZ which is 5 times per second.
 * ```temp_offset``` & ```pid``` parameters can be set in the settings of the GUI.
@@ -54,7 +55,7 @@ means 5HZ which is 5 times per second.
     temperature profile is not constant but a changing curve, this parameter will make the PID more reactive.
     * ```overshoot_comp``` (temperature in Celsius) it helps reduce the overshoot.
     
-### Fine Tuning
+### FTP access
 * The above mentioned ```advanced_temp_tuning``` may need some trial and error.  To make the fine tuning
 process a bit easier, the ESP32 will create a WiFi access point named ```uReflow Oven ftp://192.168.4.1```
 * Simply connect to that SSID and you can edit the ```config.json``` by logging in 192.168.4.1:21
@@ -84,6 +85,19 @@ The new solder profile json file should be put under folder ```profiles```.
 * All set and click "Start" button to start the reflow soldering procress.
 * If you wish to re-calibrate either the temperature curve or touch screen, click the 'Calibration' button
 on the screen, and choose from the popup window.  And follow the on-screen instruction.
+
+### PID tuning tips
+* Firstly, set ```previsioning``` & ```overshoot_comp``` to ```0``` in ```config.json``` to avoid confusing behavior.
+* Set ```kp``` to a small value, e.g. ```0.1```, and ```kd``` to a large value, e.g. ```300```.  This helps to minimize
+overshooting during the early stage which is typically seen in 'preheat' and 'soak' stage.  Keep decreasing/increasing 
+```kp```/```kd``` value until minimum overshooting is observed.
+* With a small ```kp``` & a large ```kd```, it's very hard for the actual temp to reach the peak temp of the ideal reflow
+profile, this is when you need to tune the value of ```ki```.  Slowly increase ```ki``` until the actual peak temp gets
+really close to the ideal profile.
+* Pls note that the integration part (where ki takes effects) of the PID algorithm is only enabled when it reaches
+ 'reflow' stage - this is hard coded and cannot be changed by settings.  The intention is to prevent overshooting in the
+ early stage while it still can reach the peak temp of the ideal profile.
+
 
 [lv]:https://github.com/littlevgl/lv_binding_micropython
 [oven]:https://www.aliexpress.com/item/4000151934943.html
