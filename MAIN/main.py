@@ -47,8 +47,8 @@ KP = pid_setup.get('kp')
 KI = pid_setup.get('ki')
 KD = pid_setup.get('kd')
 
-OVEN_PIN = config.get('oven_pin')
-OVEN_IS_LOW_ACTIVE = config.get('oven_is_low_active')
+HEATER_PIN = config.get('heater_pins').get('heater')
+HEATER_IS_LOW_ACTIVE = config.get('heater_pins').get('heater_low_active')
 
 BUZZER_PIN = config.get('buzzer_pin')
 
@@ -127,8 +127,8 @@ else:
                            sck=TEMP_SCK,
                            offset=TEMP_OFFSET)
 
-    oven = machine.Signal(machine.Pin(OVEN_PIN, machine.Pin.OUT), invert=OVEN_IS_LOW_ACTIVE)
-    oven.off()
+    heater = machine.Signal(machine.Pin(HEATER_PIN, machine.Pin.OUT), invert=HEATER_IS_LOW_ACTIVE)
+    heater.off()
 
     buzzer = Buzzer(BUZZER_PIN)
 
@@ -166,7 +166,7 @@ else:
     temp_th = _thread.start_new_thread(measure_temp, ())
     buzzer_th = _thread.start_new_thread(buzzer_activate, ())
 
-    oven_control = OvenControl(oven, temp_sensor, pid, reflow_profiles, gui, buzzer, timer, config)
+    oven_control = OvenControl(heater, temp_sensor, pid, reflow_profiles, gui, buzzer, timer, config)
 
 # Starting FTP service for future updates
 ap = network.WLAN(network.AP_IF)
