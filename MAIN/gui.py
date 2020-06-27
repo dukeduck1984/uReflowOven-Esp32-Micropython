@@ -325,7 +325,7 @@ class GUI:
         """
         # Temp Label
         temp_label = lv.label(self.main_scr)
-        temp_label.set_text('Temp(C`):')
+        temp_label.set_text('Temp(`C):')
         temp_label.align(self.timer_cont, lv.ALIGN.OUT_BOTTOM_LEFT, -2, 5)
         # Temp Container
         temp_cont = lv.cont(self.main_scr, self.profile_title_cont)

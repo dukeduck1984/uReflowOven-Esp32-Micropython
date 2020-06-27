@@ -36,17 +36,17 @@
     "display_refresh_hz": 2.5,
     "temp_offset": 0.0,
     "pid": {
-        "kp": 1.0,
-        "ki": 0.001,
-        "kd": 10.0
+        "kp": 0.1,
+        "ki": 0.03,
+        "kd": 300.0
     },
     "advanced_temp_tuning": {
-        "preheat_until": 40,
-        "provisioning": 5,
-        "overshoot_comp": 10
+        "preheat_until": 75,
+        "previsioning": 0,
+        "overshoot_comp": 0
     },
     "ftp": {
-        "enable": false,
+        "enable": true,
         "ssid": "Reflower ftp://192.168.4.1"
     }
 }

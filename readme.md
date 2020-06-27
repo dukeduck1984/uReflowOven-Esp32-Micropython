@@ -2,6 +2,9 @@
 
 [中文版请见于此](./readme_zh.md)。
 
+*WARNING: when updating from a previous version, make sure to get the latest config.json and carefully verify that
+it reflects your system configuration. First and foremost make sure that the heater is configured to the right polarity.*
+
 Updated! Now the μReflow Oven is PID control enabled!
 
 ![](./pic/pid.jpg)
@@ -48,7 +51,8 @@ on and off via the solid state relay.
 * Configuration is done by editing the ```config.json``` file.
 * Hardware wiring: edit the value of the key names ending with '_pins' to match your actual wiring.
 * The TFT screen and the touch controller share the same ```Clock```, ```Data In``` & ```Data Out``` pins.
-* The ACC pin of the TFT screen is for powering on the display.
+* The ACC pin of the TFT screen is for powering on the display. You cannot power the display from a GPIO pin directly.
+* ```oven_is_low_active``` set this according to how you activate your heating element.
 * ```sampling_hz``` determines the update rate of the temp sensor and the PID controller.  The default setting ```5``` 
 means 5HZ which is 5 times per second.
 * ```temp_offset``` & ```pid``` parameters can be set in the settings of the GUI.
@@ -61,7 +65,7 @@ means 5HZ which is 5 times per second.
     
 ### FTP access
 * The above mentioned ```advanced_temp_tuning``` may need some trial and error.  To make the fine tuning
-process a bit easier, the ESP32 will create a WiFi access point named ```uReflow Oven ftp://192.168.4.1```
+process a bit easier, the ESP32 will create a WiFi access point named ```Reflower ftp://192.168.4.1```
 * Simply connect to that SSID and you can edit the ```config.json``` by logging in 192.168.4.1:21
  via an FTP client, e.g. ```FileZiila```.
 
