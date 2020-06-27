@@ -9,6 +9,7 @@ class PID:
         self.last_error = 0
         self.integration = 0
         self.last_output = 0
+        self.ki_is_enabled = False
 
     def update(self, temp, setpoint):
         """
@@ -21,15 +22,21 @@ class PID:
             self.last_error = error #catch first run error
 
         P_value = self.k_p * error
-        D_value = -(self.k_d * (error - self.last_error))
+        # D_value = -(self.k_d * (error - self.last_error))
+        D_value = self.k_d * (error - self.last_error)
         self.last_error = error
-        if -15 < self.last_output < 15:
+        # if -10 < self.last_output < 10:
+        if self.ki_is_enabled:
             self.integration = self.integration + error
 
         I_value = self.integration * self.k_i
 
-        self.last_output = max(min(P_value + I_value + D_value, 15), -200)
+        # self.last_output = max(min(P_value + I_value + D_value, 15), -200)
+        self.last_output = P_value + I_value + D_value
         return self.last_output
+
+    def ki_enable(self, new_boolean):
+        self.ki_is_enabled = new_boolean
 
     def reset(self, kp=0, ki=0, kd=0):
         if kp or ki or kd:

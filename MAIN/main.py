@@ -66,7 +66,8 @@ else:
         cache_time = int(1000/config['sampling_hz'])
     )
 
-    oven = Heater(config['heater_pins']['heater'], config['heater_pins']['heater_active_low'])
+    heater = machine.Signal(machine.Pin(config['heater_pins']['heater'], machine.Pin.OUT), invert=config['heater_pins']['heater_active_low'])
+    heater.off()
 
     buzzer = Buzzer(config['buzzer_pin'])
 
@@ -94,7 +95,7 @@ else:
 
     gui = GUI(reflow_profiles, config, pid, temp_sensor)
 
-    oven_control = OvenControl(oven, temp_sensor, pid, reflow_profiles, gui, buzzer, machine.Timer(0), config)
+    oven_control = OvenControl(heater, temp_sensor, pid, reflow_profiles, gui, buzzer, machine.Timer(0), config)
 
 # Starting FTP service for future updates
 if config['ftp']['enable']:
