@@ -37,7 +37,7 @@ of both to ease the user operation.
 * 1 x ESP32 dev board.  Like [this][esp32].
 
 ### Oven Modification and Wiring
-* WARNING: The mains (220/110V) can be deadly.  Make sure the oven is unplugged from the wall plug before doing any modification
+* WARNING: The mains (220/110V) can be deadly.  Make sure the oven is unplugged from the outlet before doing any modification
 or wiring.
 * Ovens are different one from another, but basically all you need to do is to bypass the original switch and timer, and
 let the solid state relay control the heating element, hence the ESP32 board can turn the heating element
@@ -52,7 +52,7 @@ on and off via the solid state relay.
 * Hardware wiring: edit the value of the key names ending with '_pins' to match your actual wiring.
 * The TFT screen and the touch controller share the same ```Clock```, ```Data In``` & ```Data Out``` pins.
 * The ACC pin of the TFT screen is for powering on the display. You cannot power the display from a GPIO pin directly.
-* ```oven_is_low_active``` set this according to how you activate your heating element.
+* The ```active_low``` properties can be used to make a pin active low.
 * ```sampling_hz``` determines the update rate of the temp sensor and the PID controller.  The default setting ```5``` 
 means 5HZ which is 5 times per second.
 * ```temp_offset``` & ```pid``` parameters can be set in the settings of the GUI.
@@ -77,7 +77,8 @@ to how you wiring your TFT display and other components.
 * The ACC pin is for switching the power of the display. If not using a transistor to switch, you may
 safely ignore this pin (simply wire the display 3V3 to the 3V3 output of the ESP32)
 * Some solid state relays will not switch on with the little current supplied by an ESP32 GPIO pin.
-In this case you have to use a transistor between the GPIO pin and the SSR.
+In this case you have to use a transistor between the GPIO pin and the SSR. You may need to configure
+the pin as active low then.
 * Make sure you have configured the right polarity for all pins.
 * Make sure ```"has_calibrated": ``` should be ```false```
 * Transfer all the files and folder under ```MAIN``` to the ESP32 dev board and you are good to go.
