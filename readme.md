@@ -2,8 +2,13 @@
 
 [中文版请见于此](./readme_zh.md)。
 
-This project is modifided and rewritten on top of [Adafruit EZ Make Oven](https://learn.adafruit.com/ez-make-oven?view=all).
-The original code of EZ Make Oven can be found [here](https://github.com/adafruit/Adafruit_Learning_System_Guides/tree/master/PyPortal_EZ_Make_Oven).
+Updated! Now the μReflow Oven is PID control enabled!
+
+![](./pic/pid.jpg)
+
+For previous version which is non-PID controlled, pls see the branch ```Adafruit-EZ-Make-Oven-alike```.
+
+This project is an improved and heavily modified version of [Adafruit EZ Make Oven](https://learn.adafruit.com/ez-make-oven?view=all).
 
 ![](./pic/overview.jpg)
 
@@ -44,7 +49,6 @@ on and off via the solid state relay.
 * Hardware wiring: edit the value of the key names ending with '_pins' to match your actual wiring.
 * The TFT screen and the touch controller share the same ```Clock```, ```Data In``` & ```Data Out``` pins.
 * The ACC pin of the TFT screen is for powering on the display.
-* ```oven_is_low_active``` set this according to how you activate your heating element.
 * ```sampling_hz``` determines the update rate of the temp sensor and the PID controller.  The default setting ```5``` 
 means 5HZ which is 5 times per second.
 * ```temp_offset``` & ```pid``` parameters can be set in the settings of the GUI.
@@ -75,15 +79,15 @@ In this case you have to use a transistor between the GPIO pin and the SSR.
 * Transfer all the files and folder under ```MAIN``` to the ESP32 dev board and you are good to go.
 
 ### Usage Guide
-* Upon powering on the first time, you will be guided through touch screen calibration after which the ESP32 board
-will reboot. Just follow the guide.
+* Upon powering on the first time, you will be guided through touch screen calibration, once finished, the ESP32
+will reboot.
 * After calibration and reboot, the GUI will load, where you can select Solder Paste type from the
 drop-down menu, just choose the type you'll use, and the reflow temperature profile will show down below.
 * If your solder paste isn't there in the menu, you can build your own solder profile files.  Pls refer to: 
 https://learn.adafruit.com/ez-make-oven?view=all#the-toaster-oven, under chapter "Solder Paste Profiles".
 The new solder profile json file should be put under folder ```profiles```.
 * All set and click "Start" button to start the reflow soldering procress.
-* If you wish to re-calibrate either the temperature curve or touch screen, click the 'Calibration' button
+* If you wish to re-calibrate either the temperature curve or touch screen, click the 'Settings' button
 on the screen, and choose from the popup window.  And follow the on-screen instruction.
 
 ### PID tuning tips
