@@ -18,7 +18,7 @@ class GUI:
         self.pid = pid_obj
         self.sensor = sensor_obj
         self.pid_params = self.config.get('pid')
-        self.temp_offset = self.config.get('sensor_offset')
+        self.temp_offset = self.config.get('temp_offset')
         self.alloy_list = self.profiles.get_profile_alloy_names()
         self.has_started = False
         self.main_scr = lv.obj()
@@ -210,7 +210,7 @@ class GUI:
         style_title.text.font = lv.font_roboto_28
         title_label = lv.label(self.main_scr)
         title_label.set_style(lv.label.STYLE.MAIN, style_title)
-        title_label.set_text(self.config.get('title'))
+        title_label.set_text('uReflow Oven')
         title_label.align(lv.scr_act(), lv.ALIGN.IN_TOP_LEFT, 8, 3)
         return title_label
 
@@ -340,12 +340,7 @@ class GUI:
         Update the actual real-time temp
         Should be called externally
         """
-        try:
-            float(temp)
-            temp = '{:.1f}'.format(temp)
-        except ValueError: pass
-        finally:
-            self.temp_text.set_text(temp)
+        self.temp_text.set_text('{:.1f}'.format(temp))
 
     def popup_confirm_stop(self):
         modal_style = lv.style_t()
@@ -567,9 +562,9 @@ class GUI:
                         'ki': ki_value,
                         'kd': kd_value
                     }
-                    self.config['sensor_offset'] = temp_offset_value
+                    self.config['temp_offset'] = temp_offset_value
                     self.pid_params = self.config.get('pid')
-                    self.temp_offset = self.config.get('sensor_offset')
+                    self.temp_offset = self.config.get('temp_offset')
                     # Save settings to config.json
                     with open('config.json', 'w') as f:
                         ujson.dump(self.config, f)
