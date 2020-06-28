@@ -48,7 +48,7 @@ KI = pid_setup.get('ki')
 KD = pid_setup.get('kd')
 
 HEATER_PIN = config.get('heater_pins').get('heater')
-HEATER_IS_LOW_ACTIVE = config.get('heater_pins').get('heater_low_active')
+HEATER_LOW_ACTIVE = config.get('heater_pins').get('heater_low_active')
 
 BUZZER_PIN = config.get('buzzer_pin')
 
@@ -127,7 +127,7 @@ else:
                            sck=TEMP_SCK,
                            offset=TEMP_OFFSET)
 
-    heater = machine.Signal(machine.Pin(HEATER_PIN, machine.Pin.OUT), invert=HEATER_IS_LOW_ACTIVE)
+    heater = machine.Signal(machine.Pin(HEATER_PIN, machine.Pin.OUT), invert=HEATER_LOW_ACTIVE)
     heater.off()
 
     buzzer = Buzzer(BUZZER_PIN)
