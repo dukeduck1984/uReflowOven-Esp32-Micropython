@@ -2,6 +2,9 @@
 
 [中文版请见于此](./readme_zh.md)。
 
+*WARNING: when updating from a previous version, make sure to get the latest config.json and carefully verify that
+it reflects your system configuration. First and foremost make sure that the heater is configured to the right polarity.*
+
 Updated! Now the μReflow Oven is PID control enabled!
 
 ![](./pic/pid.jpg)
@@ -15,6 +18,7 @@ The original code of EZ Make Oven can be found [here](https://github.com/adafrui
 
 
 The purpose is to make a reflow soldering oven by modifying a kitchen oven with more affordable and widely available hardwares.
+Instead of an oven, a heating plate can also be used.
 
 ![](./pic/internal.jpg)
 
@@ -25,16 +29,16 @@ of both to ease the user operation.
 ![](./pic/screen.jpg)
 
 ### Bill of Materials
-* 1 x regular kitchen oven with 10-12L capacity. Like [this][oven].
-* 1 x solid state relay rated 10A. Like [this][ssr].
+* 1 x regular kitchen oven with 10-12L capacity, like [this][oven], OR a heater plate, like [this][plate].
+* 1 x solid state relay rated at least 10A. Like [this][ssr] (the heater plate linked above already includes it).
 * 1 x passive piezo buzzer. Like [this][buzzer].
 * 1 x ILI9341 TFT display with on-board XPT2046 touch controller. Like [this][tft].
-* 1 x MAX31855 thermocouple amplifier with K-thermocouple. Like [this][thermocouple].
+* 1 x Thermocouple amplifier with K-thermocouple.  So far, MAX31855 and MAX6675 are supported. [MAX31855][max31855] [MAX6675][max6675]
 * 1 x AC-DC5v power supply to power the ESP32 dev board. Like [this][acdc].
 * 1 x ESP32 dev board.  Like [this][esp32].
 
 ### Oven Modification and Wiring
-* WARNING: The mains (220/110V) can be deadly.  Make sure the oven is unplugged from the wall plug before doing any modification
+* WARNING: The mains (220/110V) can be deadly.  Make sure the oven is unplugged from the outlet before doing any modification
 or wiring.
 * Ovens are different one from another, but basically all you need to do is to bypass the original switch and timer, and
 let the solid state relay control the heating element, hence the ESP32 board can turn the heating element
@@ -43,12 +47,13 @@ on and off via the solid state relay.
 ### The Firmware for ESP32
 * Pls refer to [here](./FIRMWARE/readme.md).
 
+=======
 ### Configuration
 * Configuration is done by editing the ```config.json``` file.
 * Hardware wiring: edit the value of the key names ending with '_pins' to match your actual wiring.
 * The TFT screen and the touch controller share the same ```Clock```, ```Data In``` & ```Data Out``` pins.
-* The ACC pin of the TFT screen is for powering on the display.
-* ```oven_is_low_active``` set this according to how you activate your heating element.
+* The ACC pin of the TFT screen is for powering on the display.  You can power the display from a GPIO pin directly.
+* The ```active_low``` properties can be used to make a pin active low.
 * ```sampling_hz``` determines the update rate of the temp sensor and the PID controller.  The default setting ```5``` 
 means 5HZ which is 5 times per second.
 * ```temp_offset``` & ```pid``` parameters can be set in the settings of the GUI.
@@ -61,7 +66,7 @@ means 5HZ which is 5 times per second.
     
 ### FTP access
 * The above mentioned ```advanced_temp_tuning``` may need some trial and error.  To make the fine tuning
-process a bit easier, the ESP32 will create a WiFi access point named ```uReflow Oven ftp://192.168.4.1```
+process a bit easier, the ESP32 will create a WiFi access point named ```Reflower ftp://192.168.4.1```
 * Simply connect to that SSID and you can edit the ```config.json``` by logging in 192.168.4.1:21
  via an FTP client, e.g. ```FileZiila```.
 
@@ -69,6 +74,13 @@ process a bit easier, the ESP32 will create a WiFi access point named ```uReflow
 * All files are under ```MAIN``` folder.
 * After flashing the firmware, you need to edit ```config.json``` to change the GPIO pin numbers according 
 to how you wiring your TFT display and other components.
+* Set sensor_type to either MAX31855 or MAX6675.
+* The ACC pin is for switching the power of the display. If not using a transistor to switch, you may
+safely ignore this pin (simply wire the display 3V3 to the 3V3 output of the ESP32)
+* Some solid state relays will not switch on with the little current supplied by an ESP32 GPIO pin.
+In this case you have to use a transistor between the GPIO pin and the SSR. You may need to configure
+the pin as active low then.
+* Make sure you have configured the right polarity for all pins.
 * Transfer all the files and folder under ```MAIN``` to the ESP32 dev board and you are good to go.
 
 ### Usage Guide
@@ -98,9 +110,11 @@ really close to the ideal profile.
 
 [lv]:https://github.com/littlevgl/lv_binding_micropython
 [oven]:https://www.aliexpress.com/item/4000151934943.html
+[plate]:https://www.aliexpress.com/item/32946772052.html
 [ssr]:https://www.aliexpress.com/item/4000083560440.html
 [buzzer]:https://www.aliexpress.com/item/32808743801.html
 [tft]:https://www.aliexpress.com/item/32960934541.html
-[thermocouple]:https://www.aliexpress.com/item/32878757344.html
+[max31855]:https://www.aliexpress.com/item/32878757344.html
+[max6675]:https://www.aliexpress.com/item/4000465204314.html
 [acdc]:https://www.aliexpress.com/item/32821770958.html
 [esp32]:https://www.aliexpress.com/item/32855652152.html

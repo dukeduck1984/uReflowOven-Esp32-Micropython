@@ -14,7 +14,7 @@ class OvenControl:
         self.pid = pid_obj
         self.profiles = reflow_profiles_obj
         self.sensor = temp_sensor_obj
-        self.ontemp = self.sensor.get_temp()
+        self.ontemp = self.get_temp()
         self.offtemp = self.ontemp
         self.ontime = 0
         self.offtime = 0
@@ -61,6 +61,20 @@ class OvenControl:
         self.reflow_start = 0
         self.oven_enable(False)
 
+    def get_temp(self):
+        try:
+            return self.sensor.get_temp()
+        except Exception as e:
+            print('Emergency off')
+            self.oven.off()
+            self.ontime = 0
+            self.offtime = 0
+            self.reflow_start = 0
+            self.offtemp = 0
+            self.has_started = False
+            self.gui.led_turn_off()
+            return 0
+
     def oven_enable(self, enable):
         # self.control = enable
         if enable:
@@ -68,13 +82,13 @@ class OvenControl:
             self.gui.led_turn_on()
             self.offtime = 0
             self.ontime = utime.time()
-            self.ontemp = self.sensor.get_temp()
+            self.ontemp = self.get_temp()
         else:
             self.oven.off()
             self.gui.led_turn_off()
             self.offtime = utime.time()
             self.ontime = 0
-            self.offtemp = self.sensor.get_temp()
+            self.offtemp = self.get_temp()
 
     def format_time(self, sec):
         minutes = sec // 60
@@ -85,7 +99,7 @@ class OvenControl:
     def _reflow_temp_control(self):
         """This function is called every 100ms"""
         stages = self.profiles.get_profile_stages()
-        temp = self.sensor.get_temp()
+        temp = self.get_temp()
         if self.oven_state == "ready":
             self.oven_enable(False)
         if self.oven_state == "wait":
@@ -117,7 +131,7 @@ class OvenControl:
             if self.stage_start_time:
                 self.stage_timediff = int(utime.time() - self.stage_start_time)
             # oven temp control here
-            current_temp = self.sensor.get_temp()
+            current_temp = self.get_temp()
             # if self.oven_state == 'start':
             #     new_start_time = self.stage_timediff
             # else:
@@ -146,7 +160,7 @@ class OvenControl:
 
     def _chart_update(self):
         low_end = self.profiles.get_temp_range()[0]
-        oven_temp = self.sensor.get_temp()
+        oven_temp = self.get_temp()
         if oven_temp >= low_end:
             self.temp_points.append(int(oven_temp))
             self.gui.chart_update(self.temp_points)
@@ -232,7 +246,7 @@ class OvenControl:
         # mark the progress to start
         self.has_started = True
         # set the oven state to start
-        if self.sensor.get_temp() >= 50:
+        if self.get_temp() >= 50:
             self.set_oven_state('wait')
         else:
             self.set_oven_state('start')

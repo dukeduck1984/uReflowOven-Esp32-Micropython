@@ -1,9 +1,10 @@
 {
     "touch_cali_file": "touch_cali.json",
     "default_alloy": "Sn63/Pb37",
+    "title": "uReflow Oven",
     "heater_pins": {
         "heater": 21,
-        "heater_low_active": false
+        "heater_active_low": false
     },
     "tft_pins": {
         "miso": 5,
@@ -23,14 +24,16 @@
         "interrupt": 35
     },
     "buzzer_pin": 22,
-    "max31855_pins": {
+    "sensor_type": "MAX31855",
+    "sensor_offset": 0.0,
+    "sensor_pins": {
         "hwspi": 2,
         "cs": 27,
         "miso": 33,
         "sck": 32
     },
     "sampling_hz": 5,
-    "temp_offset": 0.0,
+    "display_refresh_hz": 2.5,
     "pid": {
         "kp": 0.1,
         "ki": 0.03,
@@ -40,5 +43,9 @@
         "preheat_until": 75,
         "previsioning": 0,
         "overshoot_comp": 0
+    },
+    "ftp": {
+        "enable": true,
+        "ssid": "Reflower ftp://192.168.4.1"
     }
 }
