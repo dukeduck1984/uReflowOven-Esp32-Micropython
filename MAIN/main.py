@@ -66,7 +66,10 @@ else:
         cache_time = int(1000/config['sampling_hz'])
     )
 
-    heater = machine.Signal(machine.Pin(config['heater_pins']['heater'], machine.Pin.OUT), invert=config['heater_pins']['heater_active_low'])
+    heater = machine.Signal(
+        machine.Pin(config['heater_pins']['heater'], machine.Pin.OUT),
+        invert=config['heater_pins']['heater_active_low']
+    )
     heater.off()
 
     buzzer = Buzzer(config['buzzer_pin'])
