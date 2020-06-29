@@ -24,7 +24,7 @@
         "interrupt": 35
     },
     "buzzer_pin": 22,
-    "sensor_type": "MAX6675",
+    "sensor_type": "MAX31855",
     "sensor_offset": 0.0,
     "sensor_pins": {
         "hwspi": 2,
