@@ -80,7 +80,6 @@ safely ignore this pin (simply wire the display 3V3 to the 3V3 output of the ESP
 In this case you have to use a transistor between the GPIO pin and the SSR. You may need to configure
 the pin as active low then.
 * Make sure you have configured the right polarity for all pins.
-* Make sure ```"has_calibrated": ``` should be ```false```
 * Transfer all the files and folder under ```MAIN``` to the ESP32 dev board and you are good to go.
 
 ### Usage Guide

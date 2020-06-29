@@ -34,7 +34,6 @@
     },
     "sampling_hz": 5,
     "display_refresh_hz": 2.5,
-    "temp_offset": 0.0,
     "pid": {
         "kp": 0.1,
         "ki": 0.03,

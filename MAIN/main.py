@@ -38,13 +38,11 @@ if config.get('touch_cali_file') not in uos.listdir():
     from touch_cali import TouchCali
     touch_cali = TouchCali(touch, config)
     touch_cali.start()
-
 else:
     import gc
     import utime
     import _thread
     from buzzer import Buzzer
-    from heater import Heater
     from gui import GUI
     from load_profiles import LoadProfiles
     from oven_control import OvenControl

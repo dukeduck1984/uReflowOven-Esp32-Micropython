@@ -179,16 +179,6 @@ class OvenControl:
         # the reflow timer starts here
         if self.oven_state == 'reflow' and self.last_state != "reflow":
             self.reflow_start = utime.time()
-        # Reset the stage timer when a new stage starts
-        if self.oven_state != self.last_state:
-            self.stage_start_time = utime.time()
-        # Reset the stage timer when the temp reaches the low end
-        if self.temp_points:
-            if len(self.temp_points) == 1:
-                self.stage_start_time = utime.time()
-        # Update stage time diff
-        if self.stage_start_time:
-            self.stage_timediff = int(utime.time() - self.stage_start_time)
 
     def _oven_state_change_timing_alert(self):
         self._stage_timimg()
