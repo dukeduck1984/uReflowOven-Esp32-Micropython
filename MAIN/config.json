@@ -1,10 +1,10 @@
 {
     "touch_cali_file": "touch_cali.json",
-    "default_alloy": "Sn63/Pb37",
-    "title": "uReflow Oven",
+    "default_alloy": "Sn96.5/Ag3.0/Cu0.5",
+    "title": "DCB Reflower",
     "heater_pins": {
         "heater": 21,
-        "heater_active_low": false
+        "heater_active_low": true
     },
     "tft_pins": {
         "miso": 5,
