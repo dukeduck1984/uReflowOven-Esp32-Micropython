@@ -343,7 +343,8 @@ class GUI:
         try:
             float(temp)
             temp = '{:.1f}'.format(temp)
-        except ValueError: pass
+        except ValueError:
+            pass
         finally:
             self.temp_text.set_text(temp)
 

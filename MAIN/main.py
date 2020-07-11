@@ -9,7 +9,8 @@ from xpt2046 import xpt2046
 
 machine.freq(240000000)
 
-config = ujson.load(open('config.json', 'r'))
+with open('config.json', 'r') as f:
+    config = ujson.load(f)
 
 disp = ili9341(
     miso = config['tft_pins']['miso'],
@@ -29,7 +30,8 @@ disp = ili9341(
 
 touch_args = {}
 if config.get('touch_cali_file') in uos.listdir():
-    touch_args = ujson.load(open(config.get('touch_cali_file'), 'r'))
+    with open(config.get('touch_cali_file'), 'r') as f:
+        touch_args = ujson.load(f)
 touch_args['cs'] = config['touch_pins']['cs']
 touch_args['transpose'] = config['tft_pins']['is_portrait']
 touch = xpt2046(**touch_args)
@@ -38,13 +40,11 @@ if config.get('touch_cali_file') not in uos.listdir():
     from touch_cali import TouchCali
     touch_cali = TouchCali(touch, config)
     touch_cali.start()
-
 else:
     import gc
     import utime
     import _thread
     from buzzer import Buzzer
-    from heater import Heater
     from gui import GUI
     from load_profiles import LoadProfiles
     from oven_control import OvenControl
@@ -66,7 +66,10 @@ else:
         cache_time = int(1000/config['sampling_hz'])
     )
 
-    heater = machine.Signal(machine.Pin(config['heater_pins']['heater'], machine.Pin.OUT), invert=config['heater_pins']['heater_active_low'])
+    heater = machine.Signal(
+        machine.Pin(config['heater_pins']['heater'], machine.Pin.OUT),
+        invert=config['heater_pins']['heater_active_low']
+    )
     heater.off()
 
     buzzer = Buzzer(config['buzzer_pin'])
