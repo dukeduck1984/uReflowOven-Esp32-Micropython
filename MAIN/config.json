@@ -37,7 +37,8 @@
     "pid": {
         "kp": 0.1,
         "ki": 0.03,
-        "kd": 300.0
+        "kd": 300.0,
+        "always_enable_integration": true
     },
     "advanced_temp_tuning": {
         "preheat_until": 75,
