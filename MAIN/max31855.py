@@ -4,7 +4,7 @@ from machine import Pin, SPI
 
 
 class MAX31855:
-    def __init__(self, hwspi=2, cs=None, sck=None, miso=None, offset=0.0, cache_time=0):
+    def __init__(self, hwspi=2, cs=None, sck=None, miso=None, offset=0.0, multiplier=1.0, cache_time=0):
         """
         :param hwspi: Hardware SPI bus id
             HSPI(id=1): sck=14, mosi=13, miso=12
@@ -23,6 +23,7 @@ class MAX31855:
         """
         baudrate = 10**5
         self._offset = offset
+        self._mult = multiplier
         self._cs = Pin(cs, Pin.OUT)
         self._data = bytearray(4)
         self.cache_time = cache_time
@@ -62,7 +63,7 @@ class MAX31855:
         refer >>= 4
         temp >>= 2
         self.last_read_time = utime.ticks_ms()
-        self.last_read = refer * 0.0625 + self._offset if internal else temp * 0.25 + self._offset
+        self.last_read = (refer * 0.0625 + self._offset if internal else temp * 0.25 + self._offset) * self._mult
         return self.last_read
 
     def get_temp(self):

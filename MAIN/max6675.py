@@ -3,9 +3,10 @@ import utime
 from machine import Pin, SPI
 
 class MAX6675:
-    def __init__(self, hwspi=2, cs=None, sck=None, miso=None, offset=0.0, cache_time=0):
+    def __init__(self, hwspi=2, cs=None, sck=None, miso=None, offset=0.0, multiplier=1.0, cache_time=0):
         baudrate = 10**5
         self._offset = offset
+        self._mult = multiplier
         self._cs = Pin(cs, Pin.OUT)
         self.cache_time = cache_time
         self.last_read = 0
@@ -36,7 +37,7 @@ class MAX6675:
             raise RuntimeError("NC") # not connected
 
         self.last_read_time = utime.ticks_ms()
-        self.last_read = ((data[0]<<8 | data[1]) >> 3) * 0.25 + self._offset
+        self.last_read = (((data[0]<<8 | data[1]) >> 3) * 0.25 + self._offset) * self._mult
         return self.last_read
 
     def get_temp(self):

@@ -26,6 +26,7 @@
     "buzzer_pin": 22,
     "sensor_type": "MAX6675",
     "sensor_offset": 0.0,
+    "sensor_multiplier": 1.0,
     "sensor_pins": {
         "hwspi": 2,
         "cs": 27,

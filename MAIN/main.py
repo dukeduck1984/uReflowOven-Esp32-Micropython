@@ -63,6 +63,7 @@ else:
         miso = config['sensor_pins']['miso'],
         sck = config['sensor_pins']['sck'],
         offset = config['sensor_offset'],
+        multiplier = config['sensor_multiplier'],
         cache_time = int(1000/config['sampling_hz'])
     )
 
