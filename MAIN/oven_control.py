@@ -211,7 +211,7 @@ class OvenControl:
         if self.oven_state == "reflow":
             self.stage_text = "#FF0000 Reflow#"
         if self.oven_state == "cool" or self.oven_state == "wait":
-            self.stage_text = "#0000FF Cool Down, Open Door#"
+            self.stage_text = "#0000FF Cool Down#"
         self.gui.set_stage_text(self.stage_text)
 
     def _control_cb_handler(self):
