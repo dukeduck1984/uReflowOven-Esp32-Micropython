@@ -35,8 +35,8 @@ class PID:
         self.last_output = P_value + I_value + D_value
         return self.last_output
 
-    def ki_enable(self, new_boolean):
-        self.ki_is_enabled = new_boolean
+    def ki_enable(self, enabled):
+        self.ki_is_enabled = enabled
 
     def reset(self, kp=0, ki=0, kd=0):
         if kp or ki or kd:

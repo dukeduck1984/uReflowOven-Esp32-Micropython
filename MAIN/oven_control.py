@@ -143,7 +143,7 @@ class OvenControl:
             if current_temp < self.PREHEAT_UNTIL:
                 self.oven_enable(True)
             else:
-                if self.oven_state == 'reflow':
+                if (self.oven_state == 'reflow' or self.config['always_enable_integration']):
                     self.pid.ki_enable(True)
                 else:
                     self.pid.ki_enable(False)
