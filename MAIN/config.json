@@ -26,7 +26,7 @@
     "buzzer_pin": 22,
     "sensor_type": "MAX6675",
     "sensor_offset": 0.0,
-    "sensor_multiplier": 1.0,
+    "sensor_multiplier": 0.91,
     "sensor_pins": {
         "hwspi": 2,
         "cs": 27,
@@ -36,9 +36,9 @@
     "sampling_hz": 5,
     "display_refresh_hz": 2.5,
     "pid": {
-        "kp": 0.1,
-        "ki": 0.03,
-        "kd": 300.0
+        "kp": 0.4,
+        "ki": 0.15,
+        "kd": 0.5,
         "always_enable_integration": true
     },
     "advanced_temp_tuning": {
