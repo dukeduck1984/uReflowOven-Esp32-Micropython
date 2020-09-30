@@ -121,7 +121,7 @@ class OvenControl:
             self.set_oven_state("cool")
         if self.oven_state == "cool":
             self.oven_enable(False)
-        if self.oven_state == 'cool' and len(self.temp_points) >= len(self.gui.null_chart_point_list):
+        if self.oven_state == 'cool' and len(self.temp_points) >= len(self.gui.chart_point_list):
             self.beep.activate('Stop')
             self.has_started = False
 
