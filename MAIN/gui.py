@@ -34,7 +34,8 @@ class GUI:
         self.led = self.led_init()
         self.line = None
         self.dashed_line = None
-        self.null_chart_point_list = None
+        self.point_count = None
+        self.chart_point_list = None
         self.profile_detail_init()
         self.profile_alloy_selector.move_foreground()
         self.show_set_btn_hide_stage()
@@ -77,9 +78,17 @@ class GUI:
         # Update chart settings
         temp_range = self.profiles.get_temp_range()
         self.chart.set_range(temp_range[0], temp_range[-1] + GUI.CHART_TOP_PADDING)  # min, max temp in the chart
-        point_count = self.profiles.get_chart_point_count()
-        self.chart.set_point_count(point_count)
-        self.null_chart_point_list = [lv.CHART_POINT.DEF] * point_count
+        self.point_count = self.profiles.get_chart_point_count()
+        self.chart.set_point_count(self.point_count)
+        self.chart_point_list = self.null_chart_list
+
+    @property
+    def null_chart_list(self):
+        """
+        Generate a null list for the chart
+        :return: List
+        """
+        return [lv.CHART_POINT.DEF] * self.point_count
 
     def chart_init(self):
         """
@@ -99,7 +108,8 @@ class GUI:
         """
         Clear the chart with null points
         """
-        self.chart.set_points(self.chart_series, self.null_chart_point_list)
+        self.chart_point_list = self.null_chart_list
+        self.chart.set_points(self.chart_series, self.chart_point_list)
 
     def chart_update(self, temp_list):
         """
@@ -107,9 +117,8 @@ class GUI:
         :param temp_list: list of actual temp with increasing length - new point appended to the tail
         """
         list_length = len(temp_list)
-        data_points = self.null_chart_point_list.copy()
-        data_points[:list_length] = temp_list
-        self.chart.set_points(self.chart_series, data_points)
+        self.chart_point_list[:list_length] = temp_list
+        self.chart.set_points(self.chart_series, self.chart_point_list)
 
     def draw_profile_line(self, points):
         """
