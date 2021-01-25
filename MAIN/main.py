@@ -1,5 +1,4 @@
 import machine
-import gc
 import ujson
 import uos
 import lvgl as lv
@@ -83,14 +82,12 @@ else:
             except Exception as e:
                 t = str(e)
             gui.temp_update(t)
-            gc.collect()
             utime.sleep_ms(int(1000/config['display_refresh_hz']))
 
     def buzzer_activate():
         while True:
             if buzzer.song:
                 buzzer.play_song(buzzer.song)
-                gc.collect()
 
     _thread.stack_size(7 * 1024)
     temp_th = _thread.start_new_thread(measure_temp, ())

@@ -27,7 +27,7 @@ class OvenControl:
         self.timer_timediff = 0
         self.stage_timediff = 0
         self.stage_text = ''
-        self.temp_points = []
+        self.temp_points_counter = -1  # used as index for updating gui.chart_point_list
         self.has_started = False
         self.timer_start_time = None
         self.stage_start_time = None
@@ -63,7 +63,7 @@ class OvenControl:
     def get_temp(self):
         try:
             return self.sensor.get_temp()
-        except Exception as e:
+        except Exception:
             print('Emergency off')
             self.oven.off()
             self.ontime = 0
@@ -121,7 +121,7 @@ class OvenControl:
             self.set_oven_state("cool")
         if self.oven_state == "cool":
             self.oven_enable(False)
-        if self.oven_state == 'cool' and len(self.temp_points) >= len(self.gui.chart_point_list):
+        if self.oven_state == 'cool' and int(self.temp_points_counter) >= len(self.gui.chart_point_list):
             self.beep.activate('Stop')
             self.has_started = False
 
@@ -161,10 +161,10 @@ class OvenControl:
         low_end = self.profiles.get_temp_range()[0]
         oven_temp = self.get_temp()
         if oven_temp >= low_end:
-            self.temp_points.append(int(oven_temp))
-            self.gui.chart_update(self.temp_points)
+            self.temp_points_counter += 1
+            self.gui.chart_update(int(oven_temp), int(self.temp_points_counter))
             # Reset the stage timer when the temp reaches the low end
-            if len(self.temp_points) == 1:
+            if self.temp_points_counter == 0:  # The counter starts from -1, so 0 means start of the process
                 self.stage_start_time = utime.time()
 
     def _elapsed_timer_update(self):
@@ -239,7 +239,7 @@ class OvenControl:
         This method is called by clicking Start button on the GUI
         """
         # clear the chart temp list
-        self.temp_points = []
+        self.temp_points_counter = -1
         # reset the timer for the whole process
         # self.start_time = utime.time()
         # mark the progress to start

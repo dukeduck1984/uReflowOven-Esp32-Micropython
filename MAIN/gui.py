@@ -1,3 +1,4 @@
+import gc
 import machine
 import ujson
 import uos
@@ -80,10 +81,9 @@ class GUI:
         self.chart.set_range(temp_range[0], temp_range[-1] + GUI.CHART_TOP_PADDING)  # min, max temp in the chart
         self.point_count = self.profiles.get_chart_point_count()
         self.chart.set_point_count(self.point_count)
-        self.chart_point_list = self.null_chart_list
+        self.chart_point_list = self.create_null_chart_list()
 
-    @property
-    def null_chart_list(self):
+    def create_null_chart_list(self):
         """
         Generate a null list for the chart
         :return: List
@@ -108,17 +108,17 @@ class GUI:
         """
         Clear the chart with null points
         """
-        self.chart_point_list = self.null_chart_list
+        self.chart_point_list = self.create_null_chart_list()
         self.chart.set_points(self.chart_series, self.chart_point_list)
 
-    def chart_update(self, temp_list):
+    def chart_update(self, temp, temp_position):
         """
         Update chart data, should be called every 1s
         :param temp_list: list of actual temp with increasing length - new point appended to the tail
         """
-        list_length = len(temp_list)
-        self.chart_point_list[:list_length] = temp_list
+        self.chart_point_list[temp_position] = temp
         self.chart.set_points(self.chart_series, self.chart_point_list)
+        self.gc_collect()
 
     def draw_profile_line(self, points):
         """
@@ -717,3 +717,8 @@ class GUI:
             self.show_set_btn_hide_stage()
             if self.reflow_process_stop_cb:
                 self.reflow_process_stop_cb()
+
+    @staticmethod
+    def gc_collect():
+        gc.collect()
+        gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())
