@@ -1,4 +1,3 @@
-import gc
 import machine
 import ujson
 import uos
@@ -717,8 +716,3 @@ class GUI:
             self.show_set_btn_hide_stage()
             if self.reflow_process_stop_cb:
                 self.reflow_process_stop_cb()
-
-    @staticmethod
-    def gc_collect():
-        gc.collect()
-        gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())

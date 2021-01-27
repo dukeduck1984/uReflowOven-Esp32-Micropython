@@ -1,3 +1,4 @@
+import gc
 import machine
 import utime
 
@@ -270,3 +271,8 @@ class OvenControl:
         self.stage_text = ''
         self.gui.set_stage_text(self.stage_text)
         self.set_oven_state('ready')
+
+    @staticmethod
+    def gc_collect():
+        gc.collect()
+        gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())

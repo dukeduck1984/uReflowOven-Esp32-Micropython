@@ -13,19 +13,19 @@ with open('config.json', 'r') as f:
     config = ujson.load(f)
 
 disp = ili9341(
-    miso = config['tft_pins']['miso'],
-    mosi = config['tft_pins']['mosi'],
-    clk = config['tft_pins']['sck'],
-    cs = config['tft_pins']['cs'],
-    dc = config['tft_pins']['dc'],
-    rst = config['tft_pins']['rst'],
-    power = config['tft_pins']['acc'],
-    backlight = config['tft_pins']['led'],
-    power_on = 0 if config['tft_pins']['acc_active_low'] else 1,
-    backlight_on = 0 if config['tft_pins']['led_active_low'] else 1,
-    width = 240 if config['tft_pins']['is_portrait'] else 320,
-    height = 320 if config['tft_pins']['is_portrait'] else 240,
-    rot = ili9341.PORTRAIT if config['tft_pins']['is_portrait'] else ili9341.LANDSCAPE
+    miso=config['tft_pins']['miso'],
+    mosi=config['tft_pins']['mosi'],
+    clk=config['tft_pins']['sck'],
+    cs=config['tft_pins']['cs'],
+    dc=config['tft_pins']['dc'],
+    rst=config['tft_pins']['rst'],
+    power=config['tft_pins']['acc'],
+    backlight=config['tft_pins']['led'],
+    power_on=0 if config['tft_pins']['acc_active_low'] else 1,
+    backlight_on=0 if config['tft_pins']['led_active_low'] else 1,
+    width=240 if config['tft_pins']['is_portrait'] else 320,
+    height=320 if config['tft_pins']['is_portrait'] else 240,
+    rot=ili9341.PORTRAIT if config['tft_pins']['is_portrait'] else ili9341.LANDSCAPE
 )
 
 touch_args = {}
@@ -41,7 +41,6 @@ if config.get('touch_cali_file') not in uos.listdir():
     touch_cali = TouchCali(touch, config)
     touch_cali.start()
 else:
-    import gc
     import utime
     import _thread
     from buzzer import Buzzer
@@ -58,12 +57,12 @@ else:
     reflow_profiles = LoadProfiles(config['default_alloy'])
 
     temp_sensor = Sensor(
-        hwspi = config['sensor_pins']['hwspi'],
-        cs = config['sensor_pins']['cs'],
-        miso = config['sensor_pins']['miso'],
-        sck = config['sensor_pins']['sck'],
-        offset = config['sensor_offset'],
-        cache_time = int(1000/config['sampling_hz'])
+        hwspi=config['sensor_pins']['hwspi'],
+        cs=config['sensor_pins']['cs'],
+        miso=config['sensor_pins']['miso'],
+        sck=config['sensor_pins']['sck'],
+        offset=config['sensor_offset'],
+        cache_time=int(1000/config['sampling_hz'])
     )
 
     heater = machine.Signal(
@@ -75,14 +74,13 @@ else:
     buzzer = Buzzer(config['buzzer_pin'])
 
     def measure_temp():
-        global TEMP_GUI_LAST_UPDATE
         while True:
             try:
                 t = temp_sensor.get_temp()
             except Exception as e:
                 t = str(e)
             gui.temp_update(t)
-            utime.sleep_ms(int(1000/config['display_refresh_hz']))
+            utime.sleep_ms(1000//config['display_refresh_hz'])
 
     def buzzer_activate():
         while True:
