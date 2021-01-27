@@ -142,8 +142,6 @@ class OvenControl:
                 self.pid.ki_enable(True)
             else:
                 self.pid.ki_enable(False)
-            # pid_output = self.pid.update(current_temp, set_temp)
-            # target_temp = set_temp + pid_output
             self._set_oven_temp(current_temp, set_temp)
 
     def _set_oven_temp(self, current_temp, set_temp):

@@ -57,13 +57,13 @@ else:
     reflow_profiles = LoadProfiles(config['default_alloy'])
 
     temp_sensor = Sensor(
-        hwspi = config['sensor_pins']['hwspi'],
-        cs = config['sensor_pins']['cs'],
-        miso = config['sensor_pins']['miso'],
-        sck = config['sensor_pins']['sck'],
-        offset = config['sensor_offset'],
         multiplier = config['sensor_multiplier'],
-        cache_time = int(1000/config['sampling_hz'])
+        hwspi=config['sensor_pins']['hwspi'],
+        cs=config['sensor_pins']['cs'],
+        miso=config['sensor_pins']['miso'],
+        sck=config['sensor_pins']['sck'],
+        offset=config['sensor_offset'],
+        cache_time=int(1000/config['sampling_hz'])
     )
 
     heater = machine.Signal(
