@@ -1,5 +1,7 @@
+import gc
 import machine
 import utime
+
 
 class OvenControl:
     states = ("wait", "ready", "start", "preheat", "soak", "reflow", "cool")
@@ -19,15 +21,15 @@ class OvenControl:
         self.offtime = 0
         self.SAMPLING_HZ = self.config.get('sampling_hz')
         self.PREHEAT_UNTIL = self.config.get('advanced_temp_tuning').get('preheat_until')
-        self.PREVISIONING = self.config.get('advanced_temp_tuning').get('previsioning')
-        self.OVERSHOOT_COMP = self.config.get('advanced_temp_tuning').get('overshoot_comp')
+        # self.PREVISIONING = self.config.get('advanced_temp_tuning').get('previsioning')
+        # self.OVERSHOOT_COMP = self.config.get('advanced_temp_tuning').get('overshoot_comp')
         self.reflow_start = 0
         self.oven_state = 'ready'
         self.last_state = 'ready'
         self.timer_timediff = 0
         self.stage_timediff = 0
         self.stage_text = ''
-        self.temp_points = []
+        self.temp_points_counter = -1  # used as index for updating gui.chart_point_list
         self.has_started = False
         self.timer_start_time = None
         self.stage_start_time = None
@@ -38,6 +40,7 @@ class OvenControl:
         self.gui.add_reflow_process_stop_cb(self.reflow_process_stop)
 
     def set_oven_state(self, state):
+        self.gc_collect()
         self.oven_state = state
         self._oven_state_change_timing_alert()
 
@@ -64,6 +67,7 @@ class OvenControl:
         try:
             return self.sensor.get_temp()
         except Exception as e:
+            print(e)
             print('Emergency off')
             self.oven.off()
             self.ontime = 0
@@ -103,7 +107,7 @@ class OvenControl:
             self.oven_enable(False)
         if self.oven_state == "wait":
             self.oven_enable(False)
-            if temp < 50:
+            if temp < 35:
                 self.set_oven_state("start")
         if self.oven_state == "start":
             self.oven_enable(True)
@@ -121,7 +125,7 @@ class OvenControl:
             self.set_oven_state("cool")
         if self.oven_state == "cool":
             self.oven_enable(False)
-        if self.oven_state == 'cool' and len(self.temp_points) >= len(self.gui.chart_point_list):
+        if self.oven_state == 'cool' and int(self.temp_points_counter) >= len(self.gui.chart_point_list):
             self.beep.activate('Stop')
             self.has_started = False
 
@@ -131,40 +135,36 @@ class OvenControl:
                 self.stage_timediff = int(utime.time() - self.stage_start_time)
             # oven temp control here
             current_temp = self.get_temp()
-            # if self.oven_state == 'start':
-            #     new_start_time = self.stage_timediff
-            # else:
-            #     new_start_time = self.stage_timediff + stages.get(self.oven_state)[0]
-            # set_temp = self.get_profile_temp(int(new_start_time + self.PROVISIONING)) - self.OVERSHOOT_COMP
-            # set_temp = self.get_profile_temp(int(self.stage_timediff + self.PROVISIONING)) - self.OVERSHOOT_COMP
-            set_temp = self.get_profile_temp(int(self.stage_timediff + self.PREVISIONING))
-            # Ignore PID & keep heating on during the early stage
-            # if current_temp < self.PREHEAT_UNTIL or self.oven_state == 'start':
-            if current_temp < self.PREHEAT_UNTIL:
-                self.oven_enable(True)
+            # set_temp = self.get_profile_temp(int(self.stage_timediff + self.PREVISIONING))
+            set_temp = self.get_profile_temp(int(self.stage_timediff))
+            # Enable integration part of PID only in reflow stage (unless always enabled)
+            if (self.oven_state == 'reflow' or self.config['always_enable_integration']):
+                self.pid.ki_enable(True)
             else:
-                if (self.oven_state == 'reflow' or self.config['always_enable_integration']):
-                    self.pid.ki_enable(True)
-                else:
-                    self.pid.ki_enable(False)
-                pid_output = self.pid.update(current_temp, set_temp)
-                target_temp = set_temp + pid_output
+                self.pid.ki_enable(False)
+            # pid_output = self.pid.update(current_temp, set_temp)
+            # target_temp = set_temp + pid_output
+            self._set_oven_temp(current_temp, set_temp)
 
-                if current_temp > set_temp - self.OVERSHOOT_COMP:
-                    self.oven_enable(False)
-                elif current_temp < target_temp:
-                    self.oven_enable(True)
-                else:
-                    self.oven_enable(False)
+    def _set_oven_temp(self, current_temp, set_temp):
+        pid_output = self.pid.update(current_temp, set_temp)
+        target_temp = set_temp + pid_output
+        # if current_temp > set_temp - self.OVERSHOOT_COMP:
+        if current_temp > set_temp:
+            self.oven_enable(False)
+        elif current_temp < target_temp:
+            self.oven_enable(True)
+        else:
+            self.oven_enable(False)
 
     def _chart_update(self):
         low_end = self.profiles.get_temp_range()[0]
         oven_temp = self.get_temp()
         if oven_temp >= low_end:
-            self.temp_points.append(int(oven_temp))
-            self.gui.chart_update(self.temp_points)
+            self.temp_points_counter += 1
+            self.gui.chart_update(int(oven_temp), int(self.temp_points_counter))
             # Reset the stage timer when the temp reaches the low end
-            if len(self.temp_points) == 1:
+            if self.temp_points_counter == 0:  # The counter starts from -1, so 0 means start of the process
                 self.stage_start_time = utime.time()
 
     def _elapsed_timer_update(self):
@@ -215,37 +215,53 @@ class OvenControl:
         self.gui.set_stage_text(self.stage_text)
 
     def _control_cb_handler(self):
+        """
+        Oven temperature control logic, periodically called by a timer
+        :return: None
+        """
         if self.has_started:
-            # Oven temperature control logic
-            # With PID, temp control logic should be called once per 100ms
-            self._reflow_temp_control()
-            # Below methods are called once per second
-            if not self.timer_last_called:
-                self.timer_last_called = utime.ticks_ms()
-            if utime.ticks_diff(utime.ticks_ms(), self.timer_last_called) >= 1000:
-                if self.oven_state in ("start", "preheat", "soak", "reflow", 'cool'):
-                    # Update gui temp chart
-                    self._chart_update()
-                    # Update elapsed timer
-                    self._elapsed_timer_update()
-                self.timer_last_called = utime.ticks_ms()
+            # Pre-delay warm up
+            if self.oven_state == 'start' \
+                    and self.get_temp() < self.PREHEAT_UNTIL:
+                self._pre_delay_warmup()
+            # Start reflow process
+            else:
+                self._reflow_temp_control()
+                # Below methods are called once per second
+                if not self.timer_last_called:
+                    self.timer_last_called = utime.ticks_ms()
+                if utime.ticks_diff(utime.ticks_ms(), self.timer_last_called) >= 1000:
+                    if self.oven_state in ('start', 'preheat', 'soak', 'reflow', 'cool'):
+                        # Update gui temp chart
+                        self._chart_update()
+                        # Update elapsed timer
+                        self._elapsed_timer_update()
+                    self.timer_last_called = utime.ticks_ms()
         else:
             self.tim.deinit()
             # Same effect as click Stop button on GUI
             self.gui.set_reflow_process_on(False)
+            self.gc_collect()
+
+    def _pre_delay_warmup(self):
+        temp = self.get_temp()
+        if temp < self.PREHEAT_UNTIL * 0.75:
+            self.oven_enable(True)
+        else:
+            self._set_oven_temp(temp, self.PREHEAT_UNTIL)
 
     def reflow_process_start(self):
         """
         This method is called by clicking Start button on the GUI
         """
         # clear the chart temp list
-        self.temp_points = []
+        self.temp_points_counter = -1
         # reset the timer for the whole process
         # self.start_time = utime.time()
         # mark the progress to start
         self.has_started = True
         # set the oven state to start
-        if self.get_temp() >= 50:
+        if self.get_temp() >= 35:
             self.set_oven_state('wait')
         else:
             self.set_oven_state('start')
@@ -270,3 +286,8 @@ class OvenControl:
         self.stage_text = ''
         self.gui.set_stage_text(self.stage_text)
         self.set_oven_state('ready')
+
+    @staticmethod
+    def gc_collect():
+        gc.collect()
+        gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())

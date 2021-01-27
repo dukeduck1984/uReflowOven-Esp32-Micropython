@@ -1,4 +1,4 @@
-## μReflow Oven with MicroPython & LittlevGL
+## μReflow Oven with MicroPython & LVGL
 
 [中文版请见于此](./readme_zh.md)。
 
@@ -46,6 +46,7 @@ on and off via the solid state relay.
 
 ### The Firmware for ESP32
 * Pls refer to [here](./FIRMWARE/readme.md).
+* __NOTE: This repo is based on LVGL v6 and is NOT compatible with v7 due to the breaking changes in v7.__
 
 =======
 ### Configuration

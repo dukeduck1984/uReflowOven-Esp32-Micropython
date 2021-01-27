@@ -42,6 +42,7 @@ LittlevGL自带了ILI9341 TFT屏幕和XPT2046触控驱动，本项目正是利�
 
 ### 给ESP32刷入固件
 * 请参考[这篇](./FIRMWARE/readme.md)。
+* __注意：此版本只适用于LVGL v6，由于LVGL v7更改了部分API，目前无法兼容v7。__
 
 ### 配置文件
 * 通过编辑 `config.json` 文件来进行配置。

@@ -80,10 +80,9 @@ class GUI:
         self.chart.set_range(temp_range[0], temp_range[-1] + GUI.CHART_TOP_PADDING)  # min, max temp in the chart
         self.point_count = self.profiles.get_chart_point_count()
         self.chart.set_point_count(self.point_count)
-        self.chart_point_list = self.null_chart_list
+        self.chart_point_list = self.create_null_chart_list()
 
-    @property
-    def null_chart_list(self):
+    def create_null_chart_list(self):
         """
         Generate a null list for the chart
         :return: List
@@ -108,17 +107,18 @@ class GUI:
         """
         Clear the chart with null points
         """
-        self.chart_point_list = self.null_chart_list
+        self.chart_point_list = self.create_null_chart_list()
         self.chart.set_points(self.chart_series, self.chart_point_list)
 
-    def chart_update(self, temp_list):
+    def chart_update(self, temp, temp_position):
         """
         Update chart data, should be called every 1s
-        :param temp_list: list of actual temp with increasing length - new point appended to the tail
+        :param temp: temp reading to update the chart
+        :param temp_position: the index for the current temp reading
         """
-        list_length = len(temp_list)
-        self.chart_point_list[:list_length] = temp_list
-        self.chart.set_points(self.chart_series, self.chart_point_list)
+        if 0 <= int(temp_position) <= len(self.chart_point_list) - 1:
+            self.chart_point_list[int(temp_position)] = int(temp)
+            self.chart.set_points(self.chart_series, self.chart_point_list)
 
     def draw_profile_line(self, points):
         """

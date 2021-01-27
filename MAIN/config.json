@@ -34,7 +34,7 @@
         "sck": 32
     },
     "sampling_hz": 5,
-    "display_refresh_hz": 2.5,
+    "display_refresh_hz": 1,
     "pid": {
         "kp": 0.4,
         "ki": 0.15,

@@ -1,4 +1,6 @@
-## Micropython 1.12 + LittlevGL
+## Micropython 1.12 + LVGL v6
+
+* This project is NOT compatible with LVGL v7 due to the breaking changes in v7.
 
 * The firmwares are built from lv_micropython with ESP-IDF v3.x
 * The file ```firmware_idf3_generic_spiram.bin``` is for the ESP32 dev boards with external SPIRAM, 
@@ -15,6 +17,8 @@ and [here](https://github.com/littlevgl/lv_binding_micropython).
 
 ---
 ## 中文说明
+
+* 本项目使用LVGL v6，由于v7更改了部分API，目前无法在v7上正常使用。
 
 * 本固件基于lv_micropython及ESP-IDF v3.x
 
