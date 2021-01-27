@@ -39,6 +39,7 @@ class OvenControl:
         self.gui.add_reflow_process_stop_cb(self.reflow_process_stop)
 
     def set_oven_state(self, state):
+        self.gc_collect()
         self.oven_state = state
         self._oven_state_change_timing_alert()
 

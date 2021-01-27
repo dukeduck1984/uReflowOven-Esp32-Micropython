@@ -113,11 +113,11 @@ class GUI:
     def chart_update(self, temp, temp_position):
         """
         Update chart data, should be called every 1s
-        :param temp_list: list of actual temp with increasing length - new point appended to the tail
+        :param temp: temp reading to update the chart
+        :param temp_position: the index for the current temp reading
         """
-        self.chart_point_list[temp_position] = temp
+        self.chart_point_list[int(temp_position)] = int(temp)
         self.chart.set_points(self.chart_series, self.chart_point_list)
-        self.gc_collect()
 
     def draw_profile_line(self, points):
         """
