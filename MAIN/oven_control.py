@@ -21,7 +21,6 @@ class OvenControl:
         self.offtime = 0
         self.SAMPLING_HZ = self.config.get('sampling_hz')
         self.PREHEAT_UNTIL = self.config.get('advanced_temp_tuning').get('preheat_until')
-        self.PREHEAT_FOR_SEC = 20
         # self.PREVISIONING = self.config.get('advanced_temp_tuning').get('previsioning')
         # self.OVERSHOOT_COMP = self.config.get('advanced_temp_tuning').get('overshoot_comp')
         self.reflow_start = 0
@@ -67,7 +66,8 @@ class OvenControl:
     def get_temp(self):
         try:
             return self.sensor.get_temp()
-        except Exception:
+        except Exception as e:
+            print(e)
             print('Emergency off')
             self.oven.off()
             self.ontime = 0
@@ -220,11 +220,10 @@ class OvenControl:
         if self.has_started:
             # Pre-delay warm up
             if self.oven_state == 'start' \
-                    and int(utime.time() - self.stage_start_time) < self.PREHEAT_FOR_SEC:
+                    and self.get_temp() < self.PREHEAT_UNTIL:
                 self._pre_delay_warmup()
             # Start reflow process
             else:
-                self.stage_start_time = None
                 self._reflow_temp_control()
                 # Below methods are called once per second
                 if not self.timer_last_called:
@@ -240,10 +239,14 @@ class OvenControl:
             self.tim.deinit()
             # Same effect as click Stop button on GUI
             self.gui.set_reflow_process_on(False)
+            self.gc_collect()
 
     def _pre_delay_warmup(self):
         temp = self.get_temp()
-        self._set_oven_temp(temp, self.PREHEAT_UNTIL)
+        if temp < self.PREHEAT_UNTIL * 0.75:
+            self.oven_enable(True)
+        else:
+            self._set_oven_temp(temp, self.PREHEAT_UNTIL)
 
     def reflow_process_start(self):
         """
@@ -260,8 +263,6 @@ class OvenControl:
             self.set_oven_state('wait')
         else:
             self.set_oven_state('start')
-
-        self.stage_start_time = utime.time()
         # initialize the hardware timer to call the control callback once every 200ms
         # With PID, the period of the timer should be 200ms now
         self.tim.init(

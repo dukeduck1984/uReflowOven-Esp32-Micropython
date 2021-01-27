@@ -40,7 +40,7 @@
         "kd": 300.0
     },
     "advanced_temp_tuning": {
-        "preheat_until": 50,
+        "preheat_until": 75,
         "previsioning": 0,
         "overshoot_comp": 0
     },
