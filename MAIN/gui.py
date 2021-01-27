@@ -116,8 +116,9 @@ class GUI:
         :param temp: temp reading to update the chart
         :param temp_position: the index for the current temp reading
         """
-        self.chart_point_list[int(temp_position)] = int(temp)
-        self.chart.set_points(self.chart_series, self.chart_point_list)
+        if 0 <= int(temp_position) <= len(self.chart_point_list) - 1:
+            self.chart_point_list[int(temp_position)] = int(temp)
+            self.chart.set_points(self.chart_series, self.chart_point_list)
 
     def draw_profile_line(self, points):
         """
