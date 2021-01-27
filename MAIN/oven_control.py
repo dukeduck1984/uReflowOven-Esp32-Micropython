@@ -138,7 +138,7 @@ class OvenControl:
             # set_temp = self.get_profile_temp(int(self.stage_timediff + self.PREVISIONING))
             set_temp = self.get_profile_temp(int(self.stage_timediff))
             # Enable integration part of PID only in reflow stage (unless always enabled)
-            if (self.oven_state == 'reflow' or self.config['always_enable_integration']):
+            if (self.oven_state == 'reflow') or self.config['always_enable_integration']:
                 self.pid.ki_enable(True)
             else:
                 self.pid.ki_enable(False)
