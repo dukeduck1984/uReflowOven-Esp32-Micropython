@@ -6,14 +6,21 @@ from rtttl import RTTTL  # rtttl parser
 
 
 class Buzzer:
-    def __init__(self, pin, volume=900):
+    def __init__(self, pin, volume=900, highidle=True):
         """
         Initialize the pwm pin for controlling the buzzer.
         It should be a passive active low piezo buzzer.
         :param pin: int; the pwm pin number
         :param volume: int; the duty cycle of the pwm.  higher the duty cycle, higher the volume of the buzzer
+        :param highidle: pwm pin in idle status will be high(3.3v) or low(0v)
         """
-        self.buz = machine.PWM(machine.Pin(pin), duty=1023, freq=440)
+        self.idleduty = 0
+        if highidle:
+            self.idleduty = 1023
+        else:
+            self.idleduty = 0
+
+        self.buz = machine.PWM(machine.Pin(pin), duty=idleduty, freq=440)
         self.volume = volume
         self.tones = {
             # define frequency for each tone
@@ -61,7 +68,7 @@ class Buzzer:
             self.buz.freq(int(freq))
             self.buz.duty(int(self.volume))
         utime.sleep_ms(int(msec * 0.9))
-        self.buz.duty(1023)
+        self.buz.duty(idleduty)
         utime.sleep_ms(int(msec * 0.1))
 
     def play(self, tune):
