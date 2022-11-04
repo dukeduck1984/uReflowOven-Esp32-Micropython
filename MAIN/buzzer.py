@@ -19,8 +19,7 @@ class Buzzer:
             self.idleduty = 1023
         else:
             self.idleduty = 0
-
-        self.buz = machine.PWM(machine.Pin(pin), duty=idleduty, freq=440)
+        self.buz = machine.PWM(machine.Pin(pin), duty=self.idleduty, freq=440)
         self.volume = volume
         self.tones = {
             # define frequency for each tone
@@ -68,7 +67,7 @@ class Buzzer:
             self.buz.freq(int(freq))
             self.buz.duty(int(self.volume))
         utime.sleep_ms(int(msec * 0.9))
-        self.buz.duty(idleduty)
+        self.buz.duty(self.idleduty)
         utime.sleep_ms(int(msec * 0.1))
 
     def play(self, tune):
