@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<!-- https://purecss.io/start/ -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@2.1.0/build/pure-min.css" integrity="sha384-yHIFVG6ClnONEA5yB5DJXfW2/KC173DIQrYoZMEtBvGzmf0PKiGyNEqe9N6BNDBH" crossorigin="anonymous">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style scoped="">
+        .button-success,
+        .button-error,
+        .button-warning,
+        .button-secondary {
+            color: white;
+            border-radius: 4px;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-success {
+            background: rgb(28, 184, 65);
+            /* this is a green */
+        }
+
+        .button-error {
+            background: rgb(202, 60, 60);
+            /* this is a maroon */
+        }
+
+        .button-warning {
+            background: rgb(223, 117, 20);
+            /* this is an orange */
+        }
+
+        .button-secondary {
+            background: rgb(66, 184, 221);
+            /* this is a light blue */
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="pure-g" >
+	<p></p>
+</div>
+
+
+<div class="pure-g">
+	<div class="pure-u-2-3"><h3>uReflow oven 烤箱回流焊炉</h3></div>
+	<!-- 🔴 🟠 🟡 🟢 🟩 🟥 -->
+	<div class="pure-u-1-3"><button id="btn-info" class="button-error pure-button">⛔ Not connected</button></div>
+</div>
+<div class="pure-g pure-form">
+	<div class="pure-u-2-3"><input id="input-url" type="text" placeholder="192.168.3.21"/></div>
+	<div class="pure-u-1-3"><button id="btn-connect" class="pure-button pure-button-primary">Connect</button></div>
+</div>
+<div class="pure-g">
+	<div class="pure-u-1-5"><p>Profile</p></div>
+	<div class="pure-u-1-5"><p>Solid paste</p></div>
+	<div class="pure-u-1-5"><p>Time</p></div>
+	<div class="pure-u-1-5"><p>Temprature</p></div>
+	<div class="pure-u-1-5"><p>Stage</p></div>
+</div>
+
+<div class="pure-g">
+	<div class="pure-u-1-5"><button id="btn-Profile" class="button-secondary pure-button">Lead 183℃</button></div>
+	<div class="pure-u-1-5"><button id="btn-alloy" class="button-secondary pure-button">Sn63/Pb37</button></div>
+	<div class="pure-u-1-5"><button id="btn-time" class="button-secondary pure-button">01:01</button></div>
+	<div class="pure-u-1-5"><button id="btn-temper" class="button-secondary pure-button">30℃</button></div>
+	<div class="pure-u-1-5"><button id="btn-stage" class="button-secondary pure-button">Pre-heat</button></div>
+</div>
+
+<form class="pure-form" onsubmit="/*console.info('stop submit');*/ return false;">
+    <fieldset>
+        <legend>PID param </legend>
+        <input id="input-kp" type="number" placeholder="0.1" step="0.001" min="0"/>
+        <input id="input-ki" type="number" placeholder="0.003" step="0.001" min="0" />
+        <input id="input-kd" type="number" placeholder="300" step="0.001" min="0" />
+        <button id="btn-getpid" class="pure-button pure-button-primary">Get</button>
+        <button id="btn-setpid" class="pure-button pure-button-primary">Set</button>
+		<label for="default-remember">
+            <input type="checkbox" id="pidok" style="visibility: hidden;" />
+        </label>
+    </fieldset>
+</form>
+
+
+<!--  -->
+<!-- 🛑 -->
+<div class="pure-g" >
+	<p></p>
+</div>
+
+<div class="pure-g">
+	<button id="btn-start" class="button-success pure-button" style="margin: auto;visibility: visible">▶️Start</button>	
+	<button id="btn-stop" class="button-success pure-button" style="margin: auto;visibility: hidden">🛑Stop</button>
+</div>
+
+<div class="pure-g" >
+	<p></p>
+</div>
+
+<div class="pure-g">
+	<canvas id="myCanvas" width="400" height="300" style="border:1px solid grey; margin: auto;"></canvas>
+	<!-- <div class="pure-u-1-6"> <p></p> </div>
+	<div class="pure-u-5-6"><canvas id="myCanvas" width="400" height="400" style="border:1px solid grey;"></canvas>
+	</div> -->
+</div>
+
+
+</body>
+<script type="text/javascript">
+	var url = ""
+	function httpGetAsync(theUrl, callback)
+	{
+	    var xmlHttp = new XMLHttpRequest();
+	    xmlHttp.onreadystatechange = function() { 
+	        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+	            callback(xmlHttp.responseText);
+	            console.info(xmlHttp.responseText);
+				// JSON.parse(xmlHttp.responseText);
+	    }
+	    xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+	    xmlHttp.send(null);
+	}
+
+	function httpSendAsync(theUrl, form, callback)
+	{
+	    var xmlHttp = new XMLHttpRequest();
+	    xmlHttp.onreadystatechange = function() { 
+	        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+	            callback(xmlHttp.responseText);
+	            console.info(xmlHttp.responseText);
+				// JSON.parse(xmlHttp.responseText);
+	    }
+	    xmlHttp.open("POST", theUrl, true); // true for asynchronous 
+	    xmlHttp.send(form);
+	}
+
+	// https://apimocha.com/
+
+	var lasttemper = null;
+	var lastupdatetime = null;
+
+	function reverseYaxis()
+	{
+		const canvas = document.getElementById("myCanvas");
+		const ctx = canvas.getContext("2d"); 
+		// https://stackoverflow.com/questions/4335400/in-html5-canvas-can-i-make-the-y-axis-go-up-rather-than-down
+		ctx.transform(1, 0, 0, -1, 0, canvas.height)
+	}
+
+	function drawTempreatureLine(updatetime, temperature)
+	{
+		const canvas = document.getElementById("myCanvas");
+		const ctx = canvas.getContext("2d"); 
+	
+		ctx.beginPath();
+
+		ctx.strokeStyle = 'orange';
+		ctx.setLineDash([]);
+
+		if(lasttemper == null)
+		{
+			ctx.moveTo(updatetime, temperature);
+		}
+		else
+		{
+			// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineTo
+			// ctx.moveTo(90, 130);
+			ctx.moveTo(lastupdatetime, lasttemper);
+			ctx.lineTo(updatetime, temperature);
+			ctx.stroke();			
+		}
+		lasttemper = temperature;
+		lastupdatetime = updatetime;
+	}
+
+	function drawSn63Pb37Profiles()
+	{
+		var profiles = [
+		[0,30],
+		[20,90],
+		[30,100],
+		[40,110],
+		[110,140],
+		[120,150],
+		[130,160],
+		[150,183],
+		[200,230],
+		[210,235],
+		[220,230],
+		[240,183],
+		[340,50]]
+		const canvas = document.getElementById("myCanvas");
+		const ctx = canvas.getContext("2d"); 
+		// https://stackoverflow.com/questions/4335400/in-html5-canvas-can-i-make-the-y-axis-go-up-rather-than-down
+		// ctx.transform(1, 0, 0, -1, 0, canvas.height)
+		ctx.beginPath();
+		ctx.strokeStyle = 'black';
+		ctx.setLineDash([3, 3]);
+		ctx.lineWidth = 1;
+
+		ctx.moveTo(profiles[0][0], profiles[0][1]);
+
+		for(var i = 1; i < profiles.length; ++i)
+		{
+			ctx.lineTo(profiles[i][0], profiles[i][1]);
+			ctx.stroke();
+		}
+
+		ctx.beginPath();
+		ctx.strokeStyle = 'yellow';
+		ctx.moveTo(0, 183);
+		ctx.setLineDash([1, 4]);
+		ctx.lineTo(canvas.width, 183);
+		ctx.stroke();
+	}
+
+	function drawGrid()
+	{
+		const canvas = document.getElementById("myCanvas");
+		const ctx = canvas.getContext("2d"); 
+		ctx.beginPath();
+		ctx.lineWidth = 0.3;
+		ctx.strokeStyle = 'gray';
+
+		ctx.fillText("Sec", canvas.width - 20, canvas.height);
+
+		for(var i = 20; i < canvas.width - 20; )
+		{
+			ctx.moveTo(i, 0);
+			ctx.lineTo(i, canvas.height);
+			ctx.stroke();
+			
+			ctx.fillText(i, i, canvas.height);
+
+			i += 20;
+			ctx.beginPath();
+			ctx.lineWidth = 0.3;
+		}
+
+		ctx.fillText("°C", 0, 20);
+
+		for(var i = 40; i < canvas.height; ){
+			ctx.moveTo(0, i);
+			ctx.lineTo(canvas.width, i);
+			ctx.stroke();
+
+			ctx.fillText(canvas.height - i, 0, i);
+
+			i += 20;
+			ctx.beginPath();
+			ctx.lineWidth = 0.3;
+		}
+	}
+
+	function clearChart(){
+		const canvas = document.getElementById("myCanvas");
+		const ctx = canvas.getContext("2d"); 
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		reverseYaxis();
+	}
+
+	function updateLiveTemperChart(){
+		console.info("updateLiveTemperChart");
+		httpGetAsync("http://"+url+"/status", function(resp){
+				try {
+					json_resp = JSON.parse(resp);
+					var info = document.getElementById("btn-info").textContent;
+					if(info == "🟢connected"){
+						document.getElementById("btn-info").textContent = "🟩connected";
+					}else{
+						document.getElementById("btn-info").textContent = "🟢connected";
+					}
+					document.getElementById("btn-temper").textContent = json_resp.temperature;
+
+					document.getElementById("btn-temper").textContent = json_resp.temperature;
+					document.getElementById("btn-stage").textContent = json_resp.stage;
+					document.getElementById("btn-time").textContent = json_resp.time;
+
+
+					drawTempreatureLine(json_resp.time, json_resp.temperature);
+
+				} catch (error) {
+					console.error(error);
+				}
+			}
+			);
+	}
+
+	function setPID(){
+		kp = document.getElementById("input-kp").value;
+		ki = document.getElementById("input-ki").value;
+		kd = document.getElementById("input-kd").value;
+		form = "kp="+kp+"&ki="+ki+"&kd="+kd;
+		httpSendAsync("http://"+url+"/setpid", form, function(resp){
+				try {
+					json_resp = JSON.parse(resp);
+					document.getElementById("pidok").checked = true;
+					document.getElementById("pidok").style.visibility="visible" ;  
+					setTimeout(function(){document.getElementById("pidok").style.visibility="hidden" ;}, 1500);
+				} catch (error) {
+					console.error(error);
+				}
+			}
+			);
+	}
+
+	function getPID(){
+		httpGetAsync("http://"+url+"/getpid", function(resp){
+				try {
+					json_resp = JSON.parse(resp);
+					kp = json_resp.kp;
+					ki = json_resp.ki;
+					kd = json_resp.kd;
+
+					document.getElementById("input-kp").value = kp;
+					document.getElementById("input-ki").value = ki;
+					document.getElementById("input-kd").value = kd;
+
+					document.getElementById("pidok").checked = true;
+					document.getElementById("pidok").style.visibility="visible" ;  
+					setTimeout(function(){document.getElementById("pidok").style.visibility="hidden" ;}, 1500);
+				} catch (error) {
+					console.error(error);
+				}
+			}
+			);
+		}
+
+	// connect
+	document.getElementById("btn-connect").addEventListener('click', (event) => {
+  		url = document.getElementById("input-url").value;
+		if(url){
+			httpGetAsync("http://"+url+"/status", function(resp){
+				try {
+					json_resp = JSON.parse(resp);
+					document.getElementById("btn-info").textContent = "🟢connected"
+					document.getElementById("btn-temper").textContent = json_resp.temperature;
+					document.getElementById("btn-stage").textContent = json_resp.stage;
+
+				} catch (error) {
+					console.error(error);
+				}
+			}
+			);		
+		}
+	});
+
+	// start
+	var timerhandler = null;
+	document.getElementById("btn-start").addEventListener('click', (event) => {
+		clearChart();
+		drawGrid();
+		reverseYaxis();
+		drawSn63Pb37Profiles();
+		if(url){
+			httpGetAsync("http://"+url+"/start", function(resp){
+				try {
+					// update about every 3 second
+					timerhandler = setInterval(updateLiveTemperChart, 3000);
+					document.getElementById("btn-start").style.visibility = "hidden";
+					document.getElementById("btn-stop").style.visibility = "visible"  
+
+				} catch (error) {
+					console.error(error);
+				}
+			}
+			);
+		}
+	});
+
+	document.getElementById("btn-stop").addEventListener('click', (event) => {
+		// stop timer
+		clearInterval(timerhandler);
+		if(url){
+			httpGetAsync("http://"+url+"/stop", function(resp){
+				try {
+					document.getElementById("btn-start").style.visibility = "visible";
+					document.getElementById("btn-stop").style.visibility = "hidden";  
+				} catch (error) {
+					console.error(error);
+				}
+			}
+			);
+		}
+	});
+
+	document.getElementById("btn-setpid").addEventListener('click', (event) => {
+		setPID();
+	}
+	);
+	document.getElementById("btn-getpid").addEventListener('click', (event) => {
+		getPID();
+	}
+	);
+
+
+	drawGrid();
+	reverseYaxis();
+	drawSn63Pb37Profiles();
+
+
+</script>
+</html>
